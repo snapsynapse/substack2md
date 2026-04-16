@@ -168,6 +168,34 @@ def normalize_tags(tags: List[str]) -> List[str]:
         out.insert(0, "substack")
     return out
 
+def fetch_paywall_status(publication: str, slug: str) -> Dict:
+    """Query Substack's public API for paywall/audience metadata.
+
+    Substack exposes ``/api/v1/posts/{slug}`` on every publication subdomain.
+    The response includes *is_paid* (bool) and *audience* (str) which indicate
+    whether the post is behind a paywall.  No authentication is required for
+    this metadata endpoint.
+
+    Returns a dict with ``is_paid`` and ``audience`` keys.  On any failure the
+    values default to ``None`` so that the caller can distinguish "not checked"
+    from "checked and free".
+    """
+    result: Dict = {"is_paid": None, "audience": None}
+    api_url = f"https://{publication}.substack.com/api/v1/posts/{slug}"
+    try:
+        resp = requests.get(api_url, headers={"Accept": "application/json",
+                                               "User-Agent": "substack2md"}, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            result["is_paid"] = data.get("audience") == "only_paid"
+            result["audience"] = data.get("audience", "everyone")
+        else:
+            print(f"[paywall] API returned {resp.status_code} for {api_url}", file=sys.stderr)
+    except Exception as exc:
+        print(f"[paywall] Could not query {api_url}: {exc}", file=sys.stderr)
+    return result
+
+
 def cleanup_url(url: str) -> str:
     if not url:
         return url
@@ -488,6 +516,8 @@ def with_frontmatter(fields: Dict, body_md: str) -> str:
         "tags": fields["tags"],
         "image": fields["image"] or "",
         "video_url": fields.get("video_url","") or "",
+        "is_paid": fields.get("is_paid"),
+        "audience": fields.get("audience"),
         "links_internal": fields.get("links_internal",0),
         "links_external": fields.get("links_external",0),
         "source": fields.get("source","substack2md v1.1.0"),
@@ -502,13 +532,20 @@ def with_frontmatter(fields: Dict, body_md: str) -> str:
 
 def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str], 
                 also_save_html: bool, overwrite: bool,
-                cdp_host: str, cdp_port: int, timeout: int, retries: int) -> Optional[Path]:
+                cdp_host: str, cdp_port: int, timeout: int, retries: int,
+                detect_paywall: bool = False) -> Optional[Path]:
     client = CDPClient(cdp_host, cdp_port, timeout=timeout)
     last_err = None
     for attempt in range(1, retries+1):
         try:
             html = client.fetch_html(url)
             fields, body_md = extract_article_fields(url, html)
+
+            # Paywall detection via Substack public API
+            if detect_paywall:
+                pw = fetch_paywall_status(fields["publication"], fields["slug"])
+                fields["is_paid"] = pw["is_paid"]
+                fields["audience"] = pw["audience"]
             
             # Use configurable publication name mapping
             pub_pretty = get_publication_name(fields["publication"], pub_mappings)
@@ -610,6 +647,9 @@ Environment variables:
     ap.add_argument("--timeout", type=int, default=45, help="Per-page CDP timeout seconds")
     ap.add_argument("--retries", type=int, default=2, help="Retries per URL on transient failures")
     ap.add_argument("--sleep-ms", type=int, default=150, help="Sleep between URLs to be polite")
+    ap.add_argument("--detect-paywall", action="store_true",
+                    help="Query Substack API to add is_paid/audience to frontmatter. "
+                         "Helps avoid accidentally sharing subscriber-only content.")
     args = ap.parse_args()
 
     # Load configuration
@@ -646,7 +686,8 @@ Environment variables:
         if "substack.com" not in url:
             print(f"[warn] Not a substack URL: {url}")
         process_url(url, base_dir, pub_mappings, args.also_save_html, args.overwrite, 
-                   args.cdp_host, args.cdp_port, args.timeout, args.retries)
+                   args.cdp_host, args.cdp_port, args.timeout, args.retries,
+                   detect_paywall=args.detect_paywall)
         if i < len(url_list) and args.sleep_ms > 0:
             time.sleep(args.sleep_ms / 1000.0)
 

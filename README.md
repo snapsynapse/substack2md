@@ -19,6 +19,7 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 - **Obsidian wikilinks** - Auto-converts internal links to existing notes
 - **Configurable naming** - Map publication slugs to custom directory names
 - **Transcript cleaning** - Strips timestamps and speaker labels from podcast transcripts
+- **Paywall detection** - Optionally tags posts as free or subscriber-only via Substack's public API, so you can avoid accidentally sharing paid content
 
 ## Installation
 
@@ -126,6 +127,9 @@ python substack2md.py URL --overwrite
 
 # Process from existing markdown export (cleanup only)
 python substack2md.py --from-md export.md --url https://pub.substack.com/p/slug
+
+# Tag posts with paywall status (respects creators' rights)
+python substack2md.py --urls-file urls.txt --detect-paywall
 ```
 
 ## URL File Format
@@ -170,6 +174,8 @@ canonical: "https://daveshap.substack.com/p/post-slug"
 slug: "post-slug"
 tags: [substack, ai, automation]
 image: "https://substackcdn.com/image.jpg"
+is_paid: false
+audience: "everyone"
 links_internal: 3
 links_external: 12
 source: "substack2md v1.1.0"
@@ -177,6 +183,17 @@ source: "substack2md v1.1.0"
 
 Content starts here...
 ```
+
+## Paywall Detection
+
+When `--detect-paywall` is passed, substack2md queries Substack's public API to determine whether each post is free or subscriber-only. This adds two fields to the YAML frontmatter:
+
+- **`is_paid`** (`true`/`false`/`null`) — whether the post requires a paid subscription
+- **`audience`** (`"everyone"` or `"only_paid"` or `null`) — the audience scope set by the author
+
+This is opt-in and requires no additional authentication — the metadata endpoint is public.
+
+**Why this matters:** If you have a paid subscription, CDP will fetch the full content of subscriber-only posts. The paywall metadata lets you build guardrails in your own workflows to avoid accidentally sharing or redistributing content that creators intended for paying subscribers only. Respect the creators whose work you value enough to pay for.
 
 ## Troubleshooting
 
@@ -219,6 +236,7 @@ options:
   --timeout SECONDS        Page load timeout (default: 45)
   --retries N              Retry failed URLs N times (default: 2)
   --sleep-ms MS            Delay between requests (default: 150)
+  --detect-paywall         Add is_paid/audience to frontmatter via Substack API
 ```
 
 ## Contributing
