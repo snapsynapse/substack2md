@@ -50,6 +50,7 @@ Usage examples:
 import argparse
 import datetime as dt
 import json
+import logging
 import os
 import re
 import sys
@@ -59,6 +60,8 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple, List
 
 __version__ = "1.2.0"
+
+log = logging.getLogger("substack2md")
 
 # Friendly dependency check so ImportError doesn't look mysterious
 _MISSING = []
@@ -122,7 +125,7 @@ def load_config(config_path: Optional[Path] = None) -> Dict:
                 if "base_dir" in user_config:
                     config["base_dir"] = user_config["base_dir"]
         except Exception as e:
-            print(f"[warn] Could not load config from {config_path}: {e}", file=sys.stderr)
+            log.warning("Could not load config from %s: %s", config_path, e)
     
     return config
 
@@ -253,8 +256,7 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
             if audience is None:
                 # 200 OK but no audience field -- can't tell; stay None/None
                 # so downstream treats this as "not checked" rather than "free".
-                print(f"[paywall] 200 but no 'audience' field for {api_url}",
-                      file=sys.stderr)
+                log.warning("paywall: 200 OK but no 'audience' field for %s", api_url)
             elif audience in known_paid:
                 result["audience"] = audience
                 result["is_paid"] = True
@@ -266,12 +268,12 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
                 # but refuse to guess is_paid.  Log so maintainers can widen
                 # the enum sets if Substack adds new tiers.
                 result["audience"] = audience
-                print(f"[paywall] Unknown audience value {audience!r} for "
-                      f"{api_url}; is_paid left as None", file=sys.stderr)
+                log.warning("paywall: unknown audience %r for %s; is_paid left as None",
+                            audience, api_url)
         else:
-            print(f"[paywall] API returned {resp.status_code} for {api_url}", file=sys.stderr)
+            log.warning("paywall: API returned %s for %s", resp.status_code, api_url)
     except Exception as exc:
-        print(f"[paywall] Could not query {api_url}: {exc}", file=sys.stderr)
+        log.warning("paywall: could not query %s: %s", api_url, exc)
     return result
 
 
@@ -648,7 +650,7 @@ def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str],
             fname = f"{fields['published']}-{fields['slug']}.md"
             out_path = target_dir / sanitize_filename(fname)
             if out_path.exists() and not overwrite:
-                print(f"[skip] Exists: {out_path}")
+                log.info("skip: exists %s", out_path)
                 return None
             url_map = build_url_to_note_map(base_dir)
             body_md, internal, external = rewrite_internal_links(body_md, url_map)
@@ -656,14 +658,14 @@ def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str],
             fields["links_external"] = external
             md_full = with_frontmatter(fields, body_md)
             out_path.write_text(md_full, encoding="utf-8")
-            print(f"[ok] {url} -> {out_path}")
+            log.info("ok: %s -> %s", url, out_path)
             if also_save_html:
                 out_path.with_suffix(".html").write_text(html, encoding="utf-8")
             return out_path
         except Exception as e:
             last_err = e
             time.sleep(0.6 * attempt)  # simple backoff
-    print(f"[fail] {url}: {last_err}", file=sys.stderr)
+    log.error("fail: %s (%s)", url, last_err)
     return None
 
 def process_from_md(md_path: Path, base_dir: Path, pub_mappings: Dict[str, str],
@@ -709,12 +711,12 @@ def process_from_md(md_path: Path, base_dir: Path, pub_mappings: Dict[str, str],
     out_path = target_dir / sanitize_filename(fname)
 
     if out_path.exists() and not overwrite:
-        print(f"[skip] Exists: {out_path}")
+        log.info("skip: exists %s", out_path)
         return None
 
     md_full = with_frontmatter(fields, body_md)
     out_path.write_text(md_full, encoding="utf-8")
-    print(f"[ok] {url} -> {out_path}")
+    log.info("ok: %s -> %s", url, out_path)
     return out_path
 
 def main():
@@ -743,7 +745,23 @@ Environment variables:
     ap.add_argument("--detect-paywall", action="store_true",
                     help="Query Substack API to add is_paid/audience to frontmatter. "
                          "Helps avoid accidentally sharing subscriber-only content.")
+    ap.add_argument("--log-level", default="INFO",
+                    choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+                    help="Logging verbosity for diagnostics (default: INFO)")
+    ap.add_argument("--quiet", "-q", action="store_true",
+                    help="Suppress per-URL [ok]/[skip] progress lines (errors still shown)")
+    ap.add_argument("--version", action="version", version=f"substack2md {__version__}")
     args = ap.parse_args()
+
+    # --quiet elevates the threshold to WARNING so per-URL progress (INFO)
+    # is hidden; errors still surface.  --log-level DEBUG reveals the chatty
+    # internals (ld+json parses, CDP frames, etc.).
+    level = logging.WARNING if args.quiet else getattr(logging, args.log_level)
+    logging.basicConfig(
+        level=level,
+        format="%(levelname)s %(name)s: %(message)s",
+        stream=sys.stderr,
+    )
 
     # Load configuration
     config = load_config(Path(args.config) if args.config else None)
@@ -777,7 +795,7 @@ Environment variables:
 
     for i, url in enumerate(url_list, 1):
         if "substack.com" not in url:
-            print(f"[warn] Not a substack URL: {url}")
+            log.warning("Not a substack URL: %s", url)
         process_url(url, base_dir, pub_mappings, args.also_save_html, args.overwrite, 
                    args.cdp_host, args.cdp_port, args.timeout, args.retries,
                    detect_paywall=args.detect_paywall)
