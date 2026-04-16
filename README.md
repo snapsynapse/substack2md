@@ -39,7 +39,17 @@ Installing registers a `substack2md` console script on your PATH. You can also i
 
 ## Quick Start
 
-### 1. Launch Your Browser with Remote Debugging (macOS)
+### 1. Launch Your Browser with Remote Debugging
+
+The whole tool depends on connecting to a Brave or Chrome instance that was started with `--remote-debugging-port=9222`. The exact invocation differs per OS.
+
+Regardless of OS, three principles apply:
+
+1. Use a **dedicated, isolated profile** (`--user-data-dir`) so your regular browser cookies and extensions are untouched.
+2. Bind to **loopback only** (`--remote-allow-origins=http://127.0.0.1:9222`) so nothing outside your machine can drive the browser.
+3. Only **one CDP-enabled browser** should use port 9222 at a time.
+
+#### macOS (tested, helper provided)
 
 The repo ships a helper that detects Brave or Chrome, isolates a dedicated CDP profile, and opens the debugging port on loopback:
 
@@ -50,12 +60,10 @@ The repo ships a helper that detects Brave or Chrome, isolates a dedicated CDP p
 What it does:
 
 - Prefers Brave; falls back to Chrome (arch-aware on Apple Silicon).
-- Creates an isolated browser profile at `$HOME/.brave-cdp-profile` or `$HOME/.chrome-cdp-profile` so your main browsing session, cookies, and extensions are untouched.
-- Binds `--remote-debugging-port=9222` to loopback only (`127.0.0.1`) and sets `--remote-allow-origins` so only local clients can connect.
+- Creates an isolated profile at `$HOME/.brave-cdp-profile` or `$HOME/.chrome-cdp-profile`.
+- Binds `--remote-debugging-port=9222` to loopback only and sets `--remote-allow-origins`.
 - If port 9222 is already in use, prompts before killing the existing process.
 - Verifies CDP is reachable after launch.
-
-The script is macOS-only (uses `open` and `/Applications`). Linux or Windows users can use the manual invocations below, or submit a PR adding platform support.
 
 Prefer to run the commands yourself? The underlying invocations are:
 
@@ -82,6 +90,58 @@ arch -arm64 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-allow-origins=http://127.0.0.1:9222 \
   --user-data-dir="$HOME/.chrome-cdp-profile"
 ```
+
+#### Linux (untested by maintainer, reports welcome)
+
+The CDP flags are identical to macOS. Distro packaging determines the binary name. Try, in order of likelihood:
+
+**Brave:**
+```bash
+brave-browser \
+  --remote-debugging-port=9222 \
+  --remote-allow-origins=http://127.0.0.1:9222 \
+  --user-data-dir="$HOME/.brave-cdp-profile"
+```
+
+If `brave-browser` isn't on your PATH, try `brave` instead.
+
+**Chrome / Chromium:**
+```bash
+google-chrome \
+  --remote-debugging-port=9222 \
+  --remote-allow-origins=http://127.0.0.1:9222 \
+  --user-data-dir="$HOME/.chrome-cdp-profile"
+```
+
+If `google-chrome` isn't available, try `chromium` or `chromium-browser`.
+
+If nothing works, `which -a brave brave-browser google-chrome chromium chromium-browser` will list whatever is installed.
+
+A Linux equivalent of `launch-browser.sh` would be a welcome PR.
+
+#### Windows (untested by maintainer, reports welcome)
+
+Use PowerShell. The `&` call operator lets you run executables whose paths contain spaces; the backtick is a line continuation.
+
+**Brave:**
+```powershell
+& "C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.exe" `
+  --remote-debugging-port=9222 `
+  --remote-allow-origins=http://127.0.0.1:9222 `
+  --user-data-dir="$env:USERPROFILE\.brave-cdp-profile"
+```
+
+**Chrome:**
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --remote-debugging-port=9222 `
+  --remote-allow-origins=http://127.0.0.1:9222 `
+  --user-data-dir="$env:USERPROFILE\.chrome-cdp-profile"
+```
+
+If your install path differs, check `HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe` or just search your `C:\Program Files` tree.
+
+A Windows-compatible `launch-browser.ps1` would be a welcome PR.
 
 ### 2. Log Into Substack
 
@@ -292,6 +352,8 @@ Ideas worth picking up:
 - Progress bar for batch processing
 - Export to other formats (JSONL, EPUB, etc.)
 - Linux launch script alongside the macOS `launch-browser.sh`
+- Windows PowerShell launch script (`launch-browser.ps1`)
+- Reports from Linux or Windows users confirming the manual invocations in the Quick Start work (or don't)
 
 ## License
 
