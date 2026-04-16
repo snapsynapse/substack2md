@@ -223,8 +223,8 @@ def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
 
 # --- C5: --from-md path unchanged -----------------------------------------
 
-def test_from_md_path_has_no_paywall_fields(tmp_path):
-    """process_from_md doesn't take a detect_paywall flag -- pin it."""
+def test_from_md_path_default_has_no_paywall_fields(tmp_path):
+    """Without detect_paywall, --from-md still does no network call."""
     src = tmp_path / "raw.md"
     src.write_text("# Some Title\n\nBody.\n", encoding="utf-8")
     out_dir = tmp_path / "out"
@@ -241,3 +241,33 @@ def test_from_md_path_has_no_paywall_fields(tmp_path):
     text = Path(out).read_text()
     assert "is_paid" not in text
     assert "audience" not in text
+
+
+def test_from_md_path_with_paywall_enabled(monkeypatch, tmp_path):
+    """--from-md + detect_paywall=True calls fetch_paywall_status and tags the output."""
+    src = tmp_path / "raw.md"
+    src.write_text("# Some Title\n\nBody.\n", encoding="utf-8")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+
+    calls = []
+
+    def spy(pub, slug, timeout=10.0):
+        calls.append((pub, slug, timeout))
+        return {"is_paid": True, "audience": "only_paid"}
+
+    monkeypatch.setattr(substack2md, "fetch_paywall_status", spy)
+    out = substack2md.process_from_md(
+        src,
+        base_dir=out_dir,
+        pub_mappings={},
+        url="https://examplepub.substack.com/p/hello",
+        overwrite=True,
+        detect_paywall=True,
+        paywall_timeout=8,
+    )
+    assert out is not None and Path(out).exists()
+    assert calls == [("examplepub", "hello", 8)]
+    text = Path(out).read_text()
+    assert "is_paid: true" in text
+    assert "audience: only_paid" in text

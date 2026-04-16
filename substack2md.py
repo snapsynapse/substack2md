@@ -708,7 +708,9 @@ def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str],
     return None
 
 def process_from_md(md_path: Path, base_dir: Path, pub_mappings: Dict[str, str],
-                    url: str, overwrite: bool) -> Optional[Path]:
+                    url: str, overwrite: bool,
+                    detect_paywall: bool = False,
+                    paywall_timeout: float = 10.0) -> Optional[Path]:
     raw = md_path.read_text(encoding="utf-8")
     m = re.search(r"^#\s+(.+)$", raw, flags=re.M)
     title = m.group(1).strip() if m else md_path.stem
@@ -739,6 +741,14 @@ def process_from_md(md_path: Path, base_dir: Path, pub_mappings: Dict[str, str],
         "links_external": 0,
         "source": f"substack2md v{__version__}",
     }
+
+    # Paywall detection works the same way as on the live path: query the
+    # Substack public API by (publication, slug) derived from the URL.
+    # Useful when backfilling is_paid/audience across an existing archive.
+    if detect_paywall:
+        pw = fetch_paywall_status(publication, slug, timeout=paywall_timeout)
+        fields["is_paid"] = pw["is_paid"]
+        fields["audience"] = pw["audience"]
 
     # Use configurable publication name mapping
     pub_pretty = get_publication_name(publication, pub_mappings)
@@ -825,7 +835,10 @@ Environment variables:
         if not args.raw_url:
             print("--url is required with --from-md")
             sys.exit(2)
-        process_from_md(Path(args.from_md), base_dir, pub_mappings, args.raw_url, args.overwrite)
+        process_from_md(Path(args.from_md), base_dir, pub_mappings,
+                        args.raw_url, args.overwrite,
+                        detect_paywall=args.detect_paywall,
+                        paywall_timeout=args.timeout)
         return
 
     if not url_list:
