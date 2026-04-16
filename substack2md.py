@@ -180,6 +180,26 @@ def fetch_paywall_status(publication: str, slug: str) -> Dict:
     values default to ``None`` so that the caller can distinguish "not checked"
     from "checked and free".
     """
+    # Substack classifies every post with an `audience` enum.  Authors can
+    # rename their subscription *tiers* in the UI (e.g. label a paid tier
+    # "Supporters" or "Founders' Circle"), but the API normalizes those to
+    # a fixed set of values used by Substack's own gating logic.
+    #
+    # Known enum values (verified empirically across 9 publications /
+    # 120+ posts, plus Substack API documentation):
+    #   "everyone"   - public, free to read
+    #   "only_free"  - requires any subscription (free OK), not paywalled
+    #   "only_paid"  - requires a paid subscription
+    #   "founding"   - requires founding-member subscription (paid)
+    #
+    # If Substack adds new tiers, we DO NOT assume free.  We return
+    # (is_paid=None, audience=<raw value>) so downstream workflows can
+    # treat the post as "status unknown" instead of silently publishing
+    # it as free.  That's the safer default for a flag whose purpose is
+    # to avoid accidental redistribution of subscriber-only content.
+    known_paid = {"only_paid", "founding"}
+    known_free = {"everyone", "only_free"}
+
     result: Dict = {"is_paid": None, "audience": None}
     api_url = f"https://{publication}.substack.com/api/v1/posts/{slug}"
     try:
@@ -187,8 +207,25 @@ def fetch_paywall_status(publication: str, slug: str) -> Dict:
                                                "User-Agent": "substack2md"}, timeout=10)
         if resp.status_code == 200:
             data = resp.json()
-            result["is_paid"] = data.get("audience") == "only_paid"
-            result["audience"] = data.get("audience", "everyone")
+            audience = data.get("audience")
+            if audience is None:
+                # 200 OK but no audience field -- can't tell; stay None/None
+                # so downstream treats this as "not checked" rather than "free".
+                print(f"[paywall] 200 but no 'audience' field for {api_url}",
+                      file=sys.stderr)
+            elif audience in known_paid:
+                result["audience"] = audience
+                result["is_paid"] = True
+            elif audience in known_free:
+                result["audience"] = audience
+                result["is_paid"] = False
+            else:
+                # Unknown enum value: preserve the raw string for debuggability
+                # but refuse to guess is_paid.  Log so maintainers can widen
+                # the enum sets if Substack adds new tiers.
+                result["audience"] = audience
+                print(f"[paywall] Unknown audience value {audience!r} for "
+                      f"{api_url}; is_paid left as None", file=sys.stderr)
         else:
             print(f"[paywall] API returned {resp.status_code} for {api_url}", file=sys.stderr)
     except Exception as exc:
