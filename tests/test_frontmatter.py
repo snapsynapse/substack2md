@@ -21,8 +21,9 @@ Merge-blocking questions:
   F4. Output is still valid YAML frontmatter that round-trips via
       yaml.safe_load.
 """
-import yaml
+
 import pytest
+import yaml
 
 import substack2md
 
@@ -59,6 +60,7 @@ def _parse_frontmatter(doc: str) -> dict:
 
 # --- F1: backward compat --------------------------------------------------
 
+
 def test_no_paywall_fields_means_no_paywall_keys_in_output():
     fields = _base_fields()  # no is_paid / audience at all
     out = substack2md.with_frontmatter(fields, "body\n")
@@ -68,6 +70,7 @@ def test_no_paywall_fields_means_no_paywall_keys_in_output():
 
 
 # --- F2: forward behavior --------------------------------------------------
+
 
 def test_is_paid_true_appears_in_frontmatter():
     fields = _base_fields(is_paid=True, audience="only_paid")
@@ -99,6 +102,7 @@ def test_none_values_are_filtered():
 
 # --- F3: YAML bool not string ---------------------------------------------
 
+
 def test_is_paid_serialized_as_yaml_bool():
     fields = _base_fields(is_paid=True, audience="only_paid")
     out = substack2md.with_frontmatter(fields, "body\n")
@@ -108,6 +112,7 @@ def test_is_paid_serialized_as_yaml_bool():
 
 
 # --- F4: body preserved ----------------------------------------------------
+
 
 def test_body_is_appended_after_frontmatter():
     fields = _base_fields(is_paid=False, audience="everyone")

@@ -8,11 +8,12 @@ an authenticated session.
 Run:
     SUBSTACK2MD_LIVE=1 pytest tests/test_live_smoke.py -v -s
 """
+
 import os
+
 import pytest
 
 import substack2md
-
 
 pytestmark = pytest.mark.skipif(
     os.getenv("SUBSTACK2MD_LIVE") != "1",
@@ -35,8 +36,11 @@ def test_live_endpoint_contract_has_audience_field(pub, slug):
     # Either the API is reachable and we see a string audience,
     # or it failed gracefully (None).  Both are acceptable; what
     # we're really checking is "no raise".
-    assert out["audience"] in (None, "everyone", "only_free",
-                               "only_paid", "founding") or isinstance(
-        out["audience"], str
-    )
+    assert out["audience"] in (
+        None,
+        "everyone",
+        "only_free",
+        "only_paid",
+        "founding",
+    ) or isinstance(out["audience"], str)
     assert out["is_paid"] in (None, True, False)

@@ -4,8 +4,9 @@ Concurrency tests:
 - Per-host serialization logic (exercised indirectly via StateFile
   concurrent writes simulating the pool).
 """
-from concurrent.futures import ThreadPoolExecutor
+
 import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import substack2md
 
@@ -42,18 +43,20 @@ def test_statefile_load_is_idempotent_under_race(tmp_path):
     double-load or crash."""
     # Pre-seed the file
     (tmp_path / ".substack2md-state").write_text(
-        "https://pub.substack.com/p/foo\n"
-        "https://pub.substack.com/p/bar\n"
+        "https://pub.substack.com/p/foo\nhttps://pub.substack.com/p/bar\n"
     )
     sf = substack2md.StateFile(tmp_path)
 
     results = []
+
     def check():
         results.append(sf.contains("https://pub.substack.com/p/foo"))
 
     threads = [threading.Thread(target=check) for _ in range(32)]
-    for t in threads: t.start()
-    for t in threads: t.join()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
 
     assert all(results)
     assert len(results) == 32

@@ -14,35 +14,50 @@ Merge-blocking questions:
       live-fetch path only).  This is a conscious scope choice; test
       pins it so future refactors don't silently break it.
 """
-from pathlib import Path
+
 import sys
+from pathlib import Path
 from unittest import mock
 
 import pytest
 
 import substack2md
 
-
 # --- C1: parser ------------------------------------------------------------
+
 
 def test_cli_accepts_detect_paywall(monkeypatch, tmp_path):
     """Argparse must recognise --detect-paywall; default False."""
     # Drive main() far enough to hit argparse, then bail.
     called = {}
 
-    def fake_process_url(url, base_dir, pub_mappings, also_save_html,
-                         overwrite, cdp_host, cdp_port, timeout, retries,
-                         detect_paywall=False):
+    def fake_process_url(
+        url,
+        base_dir,
+        pub_mappings,
+        also_save_html,
+        overwrite,
+        cdp_host,
+        cdp_port,
+        timeout,
+        retries,
+        detect_paywall=False,
+    ):
         called["detect_paywall"] = detect_paywall
         return None
 
     monkeypatch.setattr(substack2md, "process_url", fake_process_url)
-    monkeypatch.setattr(sys, "argv", [
-        "substack2md.py",
-        "https://examplepub.substack.com/p/hello",
-        "--base-dir", str(tmp_path),
-        "--detect-paywall",
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "substack2md.py",
+            "https://examplepub.substack.com/p/hello",
+            "--base-dir",
+            str(tmp_path),
+            "--detect-paywall",
+        ],
+    )
     substack2md.main()
     assert called.get("detect_paywall") is True
 
@@ -50,27 +65,43 @@ def test_cli_accepts_detect_paywall(monkeypatch, tmp_path):
 def test_cli_default_is_false(monkeypatch, tmp_path):
     called = {}
 
-    def fake_process_url(url, base_dir, pub_mappings, also_save_html,
-                         overwrite, cdp_host, cdp_port, timeout, retries,
-                         detect_paywall=False):
+    def fake_process_url(
+        url,
+        base_dir,
+        pub_mappings,
+        also_save_html,
+        overwrite,
+        cdp_host,
+        cdp_port,
+        timeout,
+        retries,
+        detect_paywall=False,
+    ):
         called["detect_paywall"] = detect_paywall
         return None
 
     monkeypatch.setattr(substack2md, "process_url", fake_process_url)
-    monkeypatch.setattr(sys, "argv", [
-        "substack2md.py",
-        "https://examplepub.substack.com/p/hello",
-        "--base-dir", str(tmp_path),
-    ])
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "substack2md.py",
+            "https://examplepub.substack.com/p/hello",
+            "--base-dir",
+            str(tmp_path),
+        ],
+    )
     substack2md.main()
     assert called.get("detect_paywall") is False
 
 
 # --- C2 / C3: wiring inside process_url -----------------------------------
 
+
 @pytest.fixture
 def fake_cdp(monkeypatch):
     """Stub CDPClient so process_url doesn't need a real browser."""
+
     class FakeClient:
         def __init__(self, *args, **kwargs):
             pass
@@ -90,6 +121,7 @@ def fake_cdp(monkeypatch):
               </article>
             </body></html>
             """
+
     monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
     return FakeClient
 
@@ -97,6 +129,7 @@ def fake_cdp(monkeypatch):
 @pytest.fixture
 def fake_cdp_custom_domain(monkeypatch):
     """A custom-domain Substack publication that embeds its canonical subdomain."""
+
     class FakeClient:
         def __init__(self, *args, **kwargs):
             pass
@@ -115,6 +148,7 @@ def fake_cdp_custom_domain(monkeypatch):
               </article>
             </body></html>
             """
+
     monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
     return FakeClient
 
@@ -131,8 +165,12 @@ def test_paywall_not_called_when_flag_off(monkeypatch, tmp_path, fake_cdp):
         "https://examplepub.substack.com/p/hello",
         base_dir=tmp_path,
         pub_mappings={},
-        also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        also_save_html=False,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=1,
+        retries=1,
         detect_paywall=False,
     )
     assert called["count"] == 0, "No network call without the flag"
@@ -150,8 +188,12 @@ def test_paywall_called_once_with_correct_args(monkeypatch, tmp_path, fake_cdp):
         "https://examplepub.substack.com/p/hello",
         base_dir=tmp_path,
         pub_mappings={},
-        also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=7, retries=1,
+        also_save_html=False,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=7,
+        retries=1,
         detect_paywall=True,
     )
     assert len(seen) == 1
@@ -169,8 +211,10 @@ def test_paywall_called_once_with_correct_args(monkeypatch, tmp_path, fake_cdp):
 
 # --- Custom-domain canonical resolution ------------------------------------
 
+
 def test_custom_domain_uses_canonical_substack_subdomain(
-        monkeypatch, tmp_path, fake_cdp_custom_domain):
+    monkeypatch, tmp_path, fake_cdp_custom_domain
+):
     """
     When the input URL is a custom domain but the page's canonical link
     points to `<pub>.substack.com/p/<slug>`, the paywall call must hit
@@ -187,8 +231,12 @@ def test_custom_domain_uses_canonical_substack_subdomain(
         "https://custom-domain.example.com/2026/some-post",
         base_dir=tmp_path,
         pub_mappings={},
-        also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        also_save_html=False,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=1,
+        retries=1,
         detect_paywall=True,
     )
     assert out is not None
@@ -201,6 +249,7 @@ def test_custom_domain_uses_canonical_substack_subdomain(
 
 # --- C4: API failure must not kill the pipeline ---------------------------
 
+
 def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
     def failing(pub, slug, timeout=10.0):
         return {"is_paid": None, "audience": None}
@@ -210,8 +259,12 @@ def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
         "https://examplepub.substack.com/p/hello",
         base_dir=tmp_path,
         pub_mappings={},
-        also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        also_save_html=False,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=1,
+        retries=1,
         detect_paywall=True,
     )
     assert out is not None and Path(out).exists()
@@ -222,6 +275,7 @@ def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
 
 
 # --- C5: --from-md path unchanged -----------------------------------------
+
 
 def test_from_md_path_default_has_no_paywall_fields(tmp_path):
     """Without detect_paywall, --from-md still does no network call."""

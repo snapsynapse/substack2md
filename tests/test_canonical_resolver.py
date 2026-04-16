@@ -3,6 +3,7 @@ Tests for resolve_substack_canonical() — the helper that lets paywall
 detection work on custom-domain publications (e.g. stratechery.com) by
 finding the `<pub>.substack.com/p/<slug>` URL embedded in the page.
 """
+
 import substack2md
 
 

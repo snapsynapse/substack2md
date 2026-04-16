@@ -10,8 +10,10 @@ Pins the teaser-warning behavior:
 
 - When the body is long, no warning regardless of is_paid.
 """
-from pathlib import Path
+
 import logging
+from pathlib import Path
+
 import pytest
 
 import substack2md
@@ -32,6 +34,7 @@ def fake_cdp_short_body(monkeypatch):
               <article><p>Short teaser text only.</p></article>
             </body></html>
             """
+
     monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
 
 
@@ -51,18 +54,25 @@ def fake_cdp_long_body(monkeypatch):
               <article><p>{long_body}</p></article>
             </body></html>
             """
+
     monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
 
 
 def _run(monkeypatch, tmp_path, is_paid, audience):
     def spy(pub, slug, timeout=10.0):
         return {"is_paid": is_paid, "audience": audience}
+
     monkeypatch.setattr(substack2md, "fetch_paywall_status", spy)
     return substack2md.process_url(
         "https://examplepub.substack.com/p/hello",
-        base_dir=tmp_path, pub_mappings={},
-        also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        base_dir=tmp_path,
+        pub_mappings={},
+        also_save_html=False,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=1,
+        retries=1,
         detect_paywall=True,
     )
 

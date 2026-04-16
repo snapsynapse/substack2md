@@ -24,12 +24,18 @@ Merge-blocking questions:
 These tests don't require network -- they only check the inputs
 fetch_paywall_status would receive.
 """
+
 import pytest
+
 import substack2md
 
 
-def _extract(url, html="<html><head><title>x</title></head><body><h1>x</h1><article><p>"
-                        + "word " * 80 + "</p></article></body></html>"):
+def _extract(
+    url,
+    html="<html><head><title>x</title></head><body><h1>x</h1><article><p>"
+    + "word " * 80
+    + "</p></article></body></html>",
+):
     fields, _ = substack2md.extract_article_fields(url, html)
     return fields
 

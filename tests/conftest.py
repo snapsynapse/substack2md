@@ -1,4 +1,5 @@
 """Make the repo root importable so `import substack2md` works."""
+
 import sys
 from pathlib import Path
 

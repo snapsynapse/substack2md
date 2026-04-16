@@ -40,6 +40,7 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "responses>=0.24",
+    "ruff>=0.4.0",
 ]
 
 [project.urls]
@@ -65,3 +66,31 @@ filterwarnings = [
     "ignore::DeprecationWarning:readability.*",
     "ignore::DeprecationWarning:bs4.*",
 ]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = [".venv", "build", "dist", ".claude"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "F",    # pyflakes
+    "W",    # pycodestyle warnings
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # bugbear (common bug patterns)
+]
+ignore = [
+    "E501",   # line too long -- trust the 100-char soft limit, let comments breathe
+    "E741",   # ambiguous variable name (we use `l` and `m` in small scopes)
+    "B008",   # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["F401", "F811"]  # pytest fixtures look unused to static analysis
+"substack2md/_core.py" = ["E402"]  # dep-check runs before heavy imports by design
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

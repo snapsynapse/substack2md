@@ -8,8 +8,8 @@ Always normalized: lowercase, dash-separated, deduplicated, "substack"
 prepended.  These tests pin each source independently and confirm the
 merge works when multiple are present.
 """
-import substack2md
 
+import substack2md
 
 URL = "https://examplepub.substack.com/p/hello"
 BODY_PADDING = "<p>" + ("word " * 80) + "</p>"

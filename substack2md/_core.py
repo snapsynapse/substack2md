@@ -7,6 +7,7 @@ The CLI glue (process_url, process_from_md, main) lives in cli.py.
 Everything exported here is re-exported from ``substack2md`` so existing
 consumers can keep using the flat ``import substack2md`` API.
 """
+
 import datetime as dt
 import json
 import logging
@@ -16,7 +17,6 @@ import sys
 import threading
 import urllib.parse
 from pathlib import Path
-from typing import Dict, Optional, Tuple, List
 
 from ._version import __version__
 
@@ -28,11 +28,14 @@ TEASER_WORD_THRESHOLD = 300
 
 # Friendly dependency check so ImportError doesn't look mysterious
 _MISSING = []
+
+
 def _need(mod, pip_name=None):
     try:
         __import__(mod)
     except Exception:
         _MISSING.append(pip_name or mod)
+
 
 for _mod, _pip in [
     ("websocket", "websocket-client"),
@@ -50,8 +53,8 @@ if _MISSING:
     print("Run:\n  pip install " + " ".join(_MISSING))
     sys.exit(1)
 
-import yaml
 import requests
+import yaml
 from bs4 import BeautifulSoup
 from markdownify import markdownify as md_convert
 from readability import Document
@@ -61,7 +64,8 @@ from websocket import create_connection
 # Configuration
 # --------------------------
 
-def load_config(config_path: Optional[Path] = None) -> Dict:
+
+def load_config(config_path: Path | None = None) -> dict:
     """Load configuration from file or environment."""
     config = {
         "publication_mappings": {},
@@ -81,7 +85,7 @@ def load_config(config_path: Optional[Path] = None) -> Dict:
 
     if config_path and config_path.exists():
         try:
-            with open(config_path, "r", encoding="utf-8") as f:
+            with open(config_path, encoding="utf-8") as f:
                 user_config = yaml.safe_load(f) or {}
                 if "publication_mappings" in user_config:
                     config["publication_mappings"] = user_config["publication_mappings"]
@@ -93,7 +97,7 @@ def load_config(config_path: Optional[Path] = None) -> Dict:
     return config
 
 
-def get_publication_name(publication_slug: str, mappings: Dict[str, str]) -> str:
+def get_publication_name(publication_slug: str, mappings: dict[str, str]) -> str:
     """Get the formatted publication name, using custom mappings if available."""
     if publication_slug in mappings:
         return mappings[publication_slug]
@@ -103,6 +107,7 @@ def get_publication_name(publication_slug: str, mappings: Dict[str, str]) -> str
 # --------------------------
 # Utilities
 # --------------------------
+
 
 def slugify(text: str) -> str:
     text = text.strip().lower()
@@ -120,7 +125,7 @@ def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
 
 
-def normalize_tags(tags: List[str]) -> List[str]:
+def normalize_tags(tags: list[str]) -> list[str]:
     out = []
     for t in tags or []:
         t = str(t).strip().lower()
@@ -165,7 +170,7 @@ def scrub_transcript_lines(md: str) -> str:
 def remove_blank_after_headings(md: str) -> str:
     lines = md.splitlines()
     out = []
-    for i, line in enumerate(lines):
+    for line in lines:
         if out and out[-1].lstrip().startswith("#") and line.strip() == "":
             continue
         out.append(line)
@@ -176,10 +181,14 @@ def collapse_blank_lines_in_lists(md: str) -> str:
     lines = md.splitlines()
     out = []
     for i, line in enumerate(lines):
-        if line.strip() == "" and i+1 < len(lines):
-            nxt = lines[i+1].strip()
-            prev = lines[i-1].strip() if i > 0 else ""
-            if (nxt.startswith(("-", "*", "\t-", "\t*")) and (prev.startswith(("-", "*", "\t-", "\t*")) or prev.endswith(":") or prev.startswith("#"))):
+        if line.strip() == "" and i + 1 < len(lines):
+            nxt = lines[i + 1].strip()
+            prev = lines[i - 1].strip() if i > 0 else ""
+            if nxt.startswith(("-", "*", "\t-", "\t*")) and (
+                prev.startswith(("-", "*", "\t-", "\t*"))
+                or prev.endswith(":")
+                or prev.startswith("#")
+            ):
                 continue
         out.append(line)
     md2 = "\n".join(out)
@@ -190,6 +199,7 @@ def collapse_blank_lines_in_lists(md: str) -> str:
 # --------------------------
 # HTML -> Markdown
 # --------------------------
+
 
 def img_to_link(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
@@ -202,19 +212,24 @@ def img_to_link(html: str) -> str:
         if img:
             alt = img.get("alt") or "image"
             src = img.get("src") or ""
-            a = soup.new_tag("a", href=src); a.string = alt
-            fig.clear(); fig.append(a)
+            a = soup.new_tag("a", href=src)
+            a.string = alt
+            fig.clear()
+            fig.append(a)
             if caption_text:
-                em = soup.new_tag("em"); em.string = f" {caption_text}"
+                em = soup.new_tag("em")
+                em.string = f" {caption_text}"
                 fig.append(em)
     for img in soup.find_all("img"):
         alt = img.get("alt") or "image"
         src = img.get("src") or ""
-        a = soup.new_tag("a", href=src); a.string = alt
+        a = soup.new_tag("a", href=src)
+        a.string = alt
         img.replace_with(a)
     for iframe in soup.find_all("iframe"):
         src = iframe.get("src") or ""
-        a = soup.new_tag("a", href=src); a.string = src or "embed"
+        a = soup.new_tag("a", href=src)
+        a.string = src or "embed"
         iframe.replace_with(a)
     for sel in ["header", "footer", "aside"]:
         for tag in soup.find_all(sel):
@@ -229,14 +244,18 @@ def html_to_markdown_clean(html: str) -> str:
     return md.strip() + "\n"
 
 
-def parse_ld_json(soup: BeautifulSoup) -> Dict:
+def parse_ld_json(soup: BeautifulSoup) -> dict:
     data = {}
     for tag in soup.find_all("script", {"type": "application/ld+json"}):
         try:
             j = json.loads(tag.string or "{}")
             items = j if isinstance(j, list) else [j]
             for item in items:
-                if isinstance(item, dict) and item.get("@type") in ("Article", "NewsArticle", "BlogPosting"):
+                if isinstance(item, dict) and item.get("@type") in (
+                    "Article",
+                    "NewsArticle",
+                    "BlogPosting",
+                ):
                     data = item
                     break
         except Exception:
@@ -251,7 +270,7 @@ def parse_ld_json(soup: BeautifulSoup) -> Dict:
 SUBSTACK_HOST_RE = re.compile(r"https?://([a-z0-9-]+)\.substack\.com/p/([^/?#]+)", re.I)
 
 
-def resolve_substack_canonical(html: str) -> Tuple[Optional[str], Optional[str]]:
+def resolve_substack_canonical(html: str) -> tuple[str | None, str | None]:
     """Find the canonical `<publication>.substack.com/p/<slug>` URL in a page.
 
     Substack publications with custom domains (e.g. stratechery.com) still
@@ -287,7 +306,7 @@ def resolve_substack_canonical(html: str) -> Tuple[Optional[str], Optional[str]]
     return (None, None)
 
 
-def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> Dict:
+def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> dict:
     """Query Substack's public API for paywall/audience metadata.
 
     Substack exposes ``/api/v1/posts/{slug}`` on every publication subdomain.
@@ -315,12 +334,14 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
     known_paid = {"only_paid", "founding"}
     known_free = {"everyone", "only_free"}
 
-    result: Dict = {"is_paid": None, "audience": None}
+    result: dict = {"is_paid": None, "audience": None}
     api_url = f"https://{publication}.substack.com/api/v1/posts/{slug}"
     try:
-        resp = requests.get(api_url, headers={"Accept": "application/json",
-                                               "User-Agent": f"substack2md/{__version__}"},
-                            timeout=timeout)
+        resp = requests.get(
+            api_url,
+            headers={"Accept": "application/json", "User-Agent": f"substack2md/{__version__}"},
+            timeout=timeout,
+        )
         if resp.status_code == 200:
             data = resp.json()
             audience = data.get("audience")
@@ -334,8 +355,9 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
                 result["is_paid"] = False
             else:
                 result["audience"] = audience
-                log.warning("paywall: unknown audience %r for %s; is_paid left as None",
-                            audience, api_url)
+                log.warning(
+                    "paywall: unknown audience %r for %s; is_paid left as None", audience, api_url
+                )
         else:
             log.warning("paywall: API returned %s for %s", resp.status_code, api_url)
     except Exception as exc:
@@ -347,11 +369,14 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
 # Article extraction
 # --------------------------
 
-def extract_article_fields(url: str, html: str) -> Tuple[Dict, str]:
+
+def extract_article_fields(url: str, html: str) -> tuple[dict, str]:
     soup = BeautifulSoup(html, "lxml")
     ld = parse_ld_json(soup)
 
-    title = (ld.get("headline") if ld else None) or (soup.find("h1").get_text(strip=True) if soup.find("h1") else "")
+    title = (ld.get("headline") if ld else None) or (
+        soup.find("h1").get_text(strip=True) if soup.find("h1") else ""
+    )
     subtitle = ""
     sub = soup.find("h3")
     if sub:
@@ -408,7 +433,7 @@ def extract_article_fields(url: str, html: str) -> Tuple[Dict, str]:
     # Tag extraction walks three sources, each more authoritative than the
     # last.  We merge rather than pick so a post tagged by the author via
     # both meta keywords and ld+json keeps all of them.
-    tags: List[str] = []
+    tags: list[str] = []
 
     meta_kw = soup.find("meta", attrs={"name": "keywords"})
     if meta_kw:
@@ -459,6 +484,7 @@ def extract_article_fields(url: str, html: str) -> Tuple[Dict, str]:
 # CDP client
 # --------------------------
 
+
 class CDPClient:
     def __init__(self, host: str = "127.0.0.1", port: int = 9222, timeout: int = 45):
         self.host = host
@@ -472,7 +498,7 @@ class CDPClient:
         ws_url = resp.json()["webSocketDebuggerUrl"]
         self.ws = create_connection(ws_url, timeout=self.timeout)
 
-    def send(self, method: str, params: Optional[Dict] = None, sessionId: Optional[str] = None):
+    def send(self, method: str, params: dict | None = None, sessionId: str | None = None):
         if not self.ws:
             self.connect()
         self.msg_id += 1
@@ -488,8 +514,9 @@ class CDPClient:
                     raise RuntimeError(f"{method} error: {obj['error']}")
                 return obj.get("result", {})
 
-    def recv_event_until(self, event: str, sessionId: Optional[str], timeout: int):
+    def recv_event_until(self, event: str, sessionId: str | None, timeout: int):
         import time
+
         deadline = time.time() + timeout
         while time.time() < deadline:
             try:
@@ -515,13 +542,16 @@ class CDPClient:
             self.send("Page.enable", sessionId=sessionId)
             self.send("Page.navigate", {"url": url}, sessionId=sessionId)
             try:
-                self.recv_event_until("Page.loadEventFired", sessionId=sessionId, timeout=self.timeout)
+                self.recv_event_until(
+                    "Page.loadEventFired", sessionId=sessionId, timeout=self.timeout
+                )
             except TimeoutError:
                 pass
-            res = self.send("Runtime.evaluate", {
-                "expression": "document.documentElement.outerHTML",
-                "returnByValue": True
-            }, sessionId=sessionId)
+            res = self.send(
+                "Runtime.evaluate",
+                {"expression": "document.documentElement.outerHTML", "returnByValue": True},
+                sessionId=sessionId,
+            )
             return res.get("result", {}).get("value", "")
         finally:
             # Always close the Chrome target, even if navigation or eval
@@ -536,7 +566,8 @@ class CDPClient:
 # Link rewriting against vault
 # --------------------------
 
-def build_url_to_note_map(base_dir: Path) -> Dict[str, Path]:
+
+def build_url_to_note_map(base_dir: Path) -> dict[str, Path]:
     url_map = {}
     for p in base_dir.rglob("*.md"):
         try:
@@ -557,8 +588,9 @@ def build_url_to_note_map(base_dir: Path) -> Dict[str, Path]:
 LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^\)]+)\)")
 
 
-def rewrite_internal_links(md: str, url_map: Dict[str, Path]) -> Tuple[str, int, int]:
+def rewrite_internal_links(md: str, url_map: dict[str, Path]) -> tuple[str, int, int]:
     internal, external = 0, 0
+
     def repl(m):
         nonlocal internal, external
         text = m.group(1)
@@ -570,6 +602,7 @@ def rewrite_internal_links(md: str, url_map: Dict[str, Path]) -> Tuple[str, int,
         else:
             external += 1
             return f"[{text}]({url})"
+
     md2 = LINK_RE.sub(repl, md)
     return md2, internal, external
 
@@ -578,7 +611,8 @@ def rewrite_internal_links(md: str, url_map: Dict[str, Path]) -> Tuple[str, int,
 # Frontmatter
 # --------------------------
 
-def with_frontmatter(fields: Dict, body_md: str) -> str:
+
+def with_frontmatter(fields: dict, body_md: str) -> str:
     fm = {
         "title": fields["title"],
         "subtitle": fields["subtitle"] or "",
@@ -617,6 +651,7 @@ class StateFile:
     Lives at ``<base_dir>/<STATE_FILENAME>`` as one URL per line.  Trivially
     human-readable; delete the file to force a full re-run.  Thread-safe.
     """
+
     def __init__(self, base_dir: Path):
         self.path = base_dir / STATE_FILENAME
         self._seen: set = set()

@@ -9,7 +9,9 @@ Resume-on-interrupt behavior:
 - The file format is intentionally human-readable; deleting it forces a
   full re-run.
 """
+
 from pathlib import Path
+
 import substack2md
 
 
@@ -56,7 +58,4 @@ def test_statefile_format_is_one_url_per_line(tmp_path):
     sf.record("https://pub.substack.com/p/foo")
     sf.record("https://pub.substack.com/p/bar")
     content = (tmp_path / ".substack2md-state").read_text()
-    assert content == (
-        "https://pub.substack.com/p/foo\n"
-        "https://pub.substack.com/p/bar\n"
-    )
+    assert content == ("https://pub.substack.com/p/foo\nhttps://pub.substack.com/p/bar\n")
