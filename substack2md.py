@@ -636,6 +636,56 @@ def with_frontmatter(fields: Dict, body_md: str) -> str:
     return f"---\n{front}\n---\n\n{body_md}"
 
 # --------------------------
+# State file for resume-on-interrupt
+# --------------------------
+
+STATE_FILENAME = ".substack2md-state"
+
+class StateFile:
+    """Append-only log of cleaned URLs that have been successfully written.
+
+    Lives at ``<base_dir>/<STATE_FILENAME>`` as one URL per line.  Trivially
+    human-readable; delete the file to force a full re-run.
+    """
+    def __init__(self, base_dir: Path):
+        self.path = base_dir / STATE_FILENAME
+        self._seen: set = set()
+        self._loaded = False
+
+    def _load(self) -> None:
+        if self._loaded:
+            return
+        self._loaded = True
+        try:
+            with self.path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    u = line.strip()
+                    if u:
+                        self._seen.add(u)
+        except FileNotFoundError:
+            pass
+        except Exception as exc:
+            log.warning("state: could not read %s: %s", self.path, exc)
+
+    def contains(self, url: str) -> bool:
+        self._load()
+        return cleanup_url(url) in self._seen
+
+    def record(self, url: str) -> None:
+        self._load()
+        cleaned = cleanup_url(url)
+        if cleaned in self._seen:
+            return
+        self._seen.add(cleaned)
+        try:
+            ensure_dir(self.path.parent)
+            with self.path.open("a", encoding="utf-8") as f:
+                f.write(cleaned + "\n")
+        except Exception as exc:
+            log.warning("state: could not append %s: %s", self.path, exc)
+
+
+# --------------------------
 # Main pipeline
 # --------------------------
 
@@ -800,6 +850,11 @@ Environment variables:
     ap.add_argument("--quiet", "-q", action="store_true",
                     help="Suppress per-URL [ok]/[skip] progress lines (errors still shown)")
     ap.add_argument("--version", action="version", version=f"substack2md {__version__}")
+    ap.add_argument("--no-resume", action="store_true",
+                    help="Disable URL-completion state file. By default substack2md "
+                         "records each successfully written URL to a .state file in "
+                         "the output tree and skips already-completed URLs on the "
+                         "next run.")
     args = ap.parse_args()
 
     # --quiet elevates the threshold to WARNING so per-URL progress (INFO)
@@ -845,14 +900,34 @@ Environment variables:
         ap.print_help()
         sys.exit(2)
 
-    for i, url in enumerate(url_list, 1):
-        if "substack.com" not in url:
-            log.warning("Not a substack URL: %s", url)
-        process_url(url, base_dir, pub_mappings, args.also_save_html, args.overwrite, 
-                   args.cdp_host, args.cdp_port, args.timeout, args.retries,
-                   detect_paywall=args.detect_paywall)
-        if i < len(url_list) and args.sleep_ms > 0:
-            time.sleep(args.sleep_ms / 1000.0)
+    # Filter URLs already completed in a prior run.  State is append-only,
+    # one cleaned-URL per line, so the file is safe to edit or delete by hand.
+    state = StateFile(base_dir) if not args.no_resume else None
+    if state is not None:
+        filtered = [u for u in url_list if not state.contains(u)]
+        if len(filtered) < len(url_list):
+            log.info("resume: %d of %d URLs already completed; %d remaining",
+                     len(url_list) - len(filtered), len(url_list), len(filtered))
+        url_list = filtered
+
+    completed = 0
+    try:
+        for i, url in enumerate(url_list, 1):
+            if "substack.com" not in url:
+                log.warning("Not a substack URL: %s", url)
+            out = process_url(url, base_dir, pub_mappings, args.also_save_html, args.overwrite,
+                              args.cdp_host, args.cdp_port, args.timeout, args.retries,
+                              detect_paywall=args.detect_paywall)
+            if out is not None and state is not None:
+                state.record(url)
+            completed += 1
+            if i < len(url_list) and args.sleep_ms > 0:
+                time.sleep(args.sleep_ms / 1000.0)
+    except KeyboardInterrupt:
+        log.warning("interrupted: %d of %d URLs processed this run; "
+                    "rerun the same command to resume",
+                    completed, len(url_list))
+        sys.exit(130)
 
 if __name__ == "__main__":
     main()
