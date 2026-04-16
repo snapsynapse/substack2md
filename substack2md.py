@@ -63,6 +63,10 @@ __version__ = "1.2.0"
 
 log = logging.getLogger("substack2md")
 
+# Body-word count below which a paywalled post is probably just the teaser.
+# Tuned to the short end of typical Substack teasers (~200-400 words).
+TEASER_WORD_THRESHOLD = 300
+
 # Friendly dependency check so ImportError doesn't look mysterious
 _MISSING = []
 def _need(mod, pip_name=None):
@@ -662,7 +666,21 @@ def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str],
                 pw = fetch_paywall_status(pw_pub, pw_slug, timeout=timeout)
                 fields["is_paid"] = pw["is_paid"]
                 fields["audience"] = pw["audience"]
-            
+
+                # If the post is paywalled and the extracted body is suspiciously
+                # short, the user probably only captured the teaser.  Readability
+                # won't tell you this on its own; pair it with the paywall signal
+                # and warn so downstream workflows know the .md is incomplete.
+                if pw["is_paid"] is True:
+                    word_count = len(body_md.split())
+                    if word_count < TEASER_WORD_THRESHOLD:
+                        log.warning(
+                            "teaser suspected: %s is paywalled (audience=%s) but "
+                            "body is only %d words. You may need a paid subscription "
+                            "in the CDP-connected browser to fetch the full text.",
+                            url, pw["audience"], word_count,
+                        )
+
             # Use configurable publication name mapping
             pub_pretty = get_publication_name(fields["publication"], pub_mappings)
             
