@@ -47,6 +47,16 @@ The repo ships a helper that detects Brave or Chrome, isolates a dedicated CDP p
 ./launch-browser.sh
 ```
 
+What it does:
+
+- Prefers Brave; falls back to Chrome (arch-aware on Apple Silicon).
+- Creates an isolated browser profile at `$HOME/.brave-cdp-profile` or `$HOME/.chrome-cdp-profile` so your main browsing session, cookies, and extensions are untouched.
+- Binds `--remote-debugging-port=9222` to loopback only (`127.0.0.1`) and sets `--remote-allow-origins` so only local clients can connect.
+- If port 9222 is already in use, prompts before killing the existing process.
+- Verifies CDP is reachable after launch.
+
+The script is macOS-only (uses `open` and `/Applications`). Linux or Windows users can use the manual invocations below, or submit a PR adding platform support.
+
 Prefer to run the commands yourself? The underlying invocations are:
 
 **Brave (Recommended):**
@@ -197,7 +207,7 @@ is_paid: false
 audience: "everyone"
 links_internal: 3
 links_external: 12
-source: "substack2md v1.2.0"
+source: "substack2md v2.0.0"
 ---
 
 Content starts here...

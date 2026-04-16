@@ -5,4 +5,4 @@ without importing the full ``_core`` module (which runs a runtime-
 dependency check and would fail in a build-isolation environment).
 """
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
