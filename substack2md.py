@@ -436,11 +436,32 @@ def extract_article_fields(url: str, html: str) -> Tuple[Dict, str]:
     body_md = collapse_blank_lines_in_lists(body_md)
     body_md = remove_blank_after_headings(body_md)
 
-    tags = []
+    # Tag extraction walks three sources, each more authoritative than the
+    # last.  We merge rather than pick so a post tagged by the author via
+    # both meta keywords and ld+json keeps all of them.
+    tags: List[str] = []
+
+    # 1. <meta name="keywords"> -- classic, comma-separated
     meta_kw = soup.find("meta", attrs={"name": "keywords"})
     if meta_kw:
         kw = meta_kw.get("content") or ""
-        tags = [x.strip() for x in kw.split(",") if x.strip()]
+        tags.extend(x.strip() for x in kw.split(",") if x.strip())
+
+    # 2. ld+json "keywords" -- Substack populates this; can be list or string
+    if ld:
+        kw = ld.get("keywords")
+        if isinstance(kw, list):
+            tags.extend(str(x).strip() for x in kw if str(x).strip())
+        elif isinstance(kw, str):
+            tags.extend(x.strip() for x in kw.split(",") if x.strip())
+
+    # 3. ld+json "articleSection" -- Substack's section/category name
+    section = ld.get("articleSection") if ld else None
+    if isinstance(section, str) and section.strip():
+        tags.append(section.strip())
+    elif isinstance(section, list):
+        tags.extend(str(x).strip() for x in section if str(x).strip())
+
     tags = normalize_tags(tags)
 
     video_url = ""
