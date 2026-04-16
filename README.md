@@ -229,7 +229,7 @@ This is opt-in and requires no additional authentication; the metadata endpoint 
 
 ### "Missing modules" error
 ```bash
-pip install -r requirements.txt
+pip install .
 ```
 
 ### URLs not being converted to wikilinks

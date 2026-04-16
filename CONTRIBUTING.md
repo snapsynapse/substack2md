@@ -4,13 +4,19 @@ Thanks for your interest. A few conventions that keep the repo easy to maintain.
 
 ## Before you open a PR
 
-1. Install dev dependencies and run the test suite locally:
+1. Install in editable mode with dev extras and run the test suite locally:
    ```bash
    python -m venv .venv && source .venv/bin/activate
-   pip install -r requirements.txt -r tests/requirements-dev.txt
+   pip install -e ".[dev]"
    pytest tests/ -v
    ```
-   Expect 30+ passed, 1 skipped (the live smoke test is opt-in via `SUBSTACK2MD_LIVE=1`).
+   Expect 50+ passed, 1 skipped (the live smoke test is opt-in via `SUBSTACK2MD_LIVE=1`).
+
+2. Before pushing, run the linter the way CI does:
+   ```bash
+   ruff check substack2md tests
+   ruff format --check substack2md tests
+   ```
 
 2. If you changed behavior that users see, update `README.md` and `CHANGELOG.md` in the same PR.
 
@@ -27,7 +33,8 @@ Thanks for your interest. A few conventions that keep the repo easy to maintain.
 
 - Follow existing code style. Indent is 4 spaces.
 - Type hints on new function signatures are encouraged but not strictly required yet.
-- Use the `logging` module for user-visible output (future commit). `print()` is fine for CLI-level messages in `main()`.
+- Use the `logging` module for diagnostics. The module-level `log` object in `substack2md._core` is the shared logger; reserve `print()` for boot-time errors that happen before logging is configured.
+- Run `ruff check` and `ruff format` before pushing; CI enforces both.
 - No em dashes in user-facing strings (markdown output, CLI help, README, docs).
 
 ## Tests

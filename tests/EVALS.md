@@ -9,7 +9,7 @@ Base: snapsynapse:main
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt -r tests/requirements-dev.txt
+pip install -e ".[dev]"
 
 # Fetch PR code into a local checkout
 git remote add drew https://github.com/drewid74/substack2md.git
