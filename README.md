@@ -24,17 +24,30 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 ## Installation
 
 ```bash
-# Clone the repo
 git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
-
-# Install dependencies
-pip install -r requirements.txt
+pip install .
 ```
+
+For development work:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Installing registers a `substack2md` console script on your PATH. You can also invoke the package as a module: `python -m substack2md`.
 
 ## Quick Start
 
-### 1. Launch Your Browser with Remote Debugging
+### 1. Launch Your Browser with Remote Debugging (macOS)
+
+The repo ships a helper that detects Brave or Chrome, isolates a dedicated CDP profile, and opens the debugging port on loopback:
+
+```bash
+./launch-browser.sh
+```
+
+Prefer to run the commands yourself? The underlying invocations are:
 
 **Brave (Recommended):**
 ```bash
@@ -68,17 +81,17 @@ In the browser window that just opened, navigate to Substack and log in normally
 
 **Single URL:**
 ```bash
-python substack2md.py https://natesnewsletter.substack.com/p/latest-post
+substack2md https://natesnewsletter.substack.com/p/latest-post
 ```
 
 **Multiple URLs from file:**
 ```bash
-python substack2md.py --urls-file my-reading-list.txt
+substack2md --urls-file my-reading-list.txt
 ```
 
 **Specify output directory:**
 ```bash
-python substack2md.py https://daveshap.substack.com/p/post-slug --base-dir ~/my-notes
+substack2md https://daveshap.substack.com/p/post-slug --base-dir ~/my-notes
 ```
 
 ## Configuration
@@ -114,22 +127,28 @@ See `config.yaml.example` for a template.
 
 ```bash
 # Single post with custom output directory
-python substack2md.py https://pub.substack.com/p/slug --base-dir ~/vault
+substack2md https://pub.substack.com/p/slug --base-dir ~/vault
 
 # Batch processing with slower delays (be nice to servers)
-python substack2md.py --urls-file urls.txt --sleep-ms 500
+substack2md --urls-file urls.txt --sleep-ms 500
+
+# Parallel workers for large reading lists (per-publication rate limits preserved)
+substack2md --urls-file urls.txt --concurrency 4
 
 # Save HTML alongside markdown (for debugging)
-python substack2md.py URL --also-save-html
+substack2md URL --also-save-html
 
 # Overwrite existing files
-python substack2md.py URL --overwrite
+substack2md URL --overwrite
 
 # Process from existing markdown export (cleanup only)
-python substack2md.py --from-md export.md --url https://pub.substack.com/p/slug
+substack2md --from-md export.md --url https://pub.substack.com/p/slug
 
 # Tag posts with paywall status (respects creators' rights)
-python substack2md.py --urls-file urls.txt --detect-paywall
+substack2md --urls-file urls.txt --detect-paywall
+
+# Quiet mode for scripted use; errors still surface
+substack2md --urls-file urls.txt --quiet
 ```
 
 ## URL File Format
@@ -225,7 +244,7 @@ pip install -r requirements.txt
 ## Advanced Options
 
 ```bash
-python substack2md.py --help
+substack2md --help
 ```
 
 ```
@@ -239,20 +258,30 @@ options:
   --overwrite              Replace existing files
   --cdp-host HOST          CDP hostname (default: 127.0.0.1)
   --cdp-port PORT          CDP port (default: 9222)
-  --timeout SECONDS        Page load timeout (default: 45)
+  --timeout SECONDS        Page load + paywall API timeout (default: 45)
   --retries N              Retry failed URLs N times (default: 2)
-  --sleep-ms MS            Delay between requests (default: 150)
+  --sleep-ms MS            Delay between requests per publication (default: 150)
   --detect-paywall         Add is_paid/audience to frontmatter via Substack API
+  --concurrency N          Parallel worker threads, 1=sequential (default: 1)
+  --no-resume              Disable the .substack2md-state resume file
+  --log-level LEVEL        DEBUG/INFO/WARNING/ERROR (default: INFO)
+  --quiet, -q              Suppress per-URL progress lines
+  --version                Print version and exit
 ```
+
+### Resume after interruption
+
+Every successfully written URL is appended to `<base-dir>/.substack2md-state`. On the next run, URLs already in that file are skipped before any network call. Delete the file to force a full re-run, or edit it by hand to redo specific posts. Pass `--no-resume` to disable.
 
 ## Contributing
 
-Pull requests welcome! Areas for improvement:
+Pull requests welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for local test setup and PR conventions.
+
+Ideas worth picking up:
 - Support for other platforms (Medium, Ghost, etc.)
-- Better error handling
-- Progress bars for batch processing
-- Parallel processing option
-- Export to other formats
+- Progress bar for batch processing
+- Export to other formats (JSONL, EPUB, etc.)
+- Linux launch script alongside the macOS `launch-browser.sh`
 
 ## License
 
