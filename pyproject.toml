@@ -1,0 +1,66 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "substack2md"
+dynamic = ["version"]
+description = "Convert Substack posts to clean, Obsidian-friendly Markdown using your authenticated browser session."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "snapsynapse" }
+]
+keywords = ["substack", "markdown", "obsidian", "cdp", "chrome-devtools", "archival"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "websocket-client>=1.6.0",
+    "beautifulsoup4>=4.12.0",
+    "lxml>=4.9.0",
+    "readability-lxml>=0.8.1",
+    "markdownify>=0.11.0",
+    "pyyaml>=6.0",
+    "requests>=2.31.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "responses>=0.24",
+]
+
+[project.urls]
+Homepage = "https://github.com/snapsynapse/substack2md"
+Repository = "https://github.com/snapsynapse/substack2md"
+Issues = "https://github.com/snapsynapse/substack2md/issues"
+Changelog = "https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md"
+
+[project.scripts]
+substack2md = "substack2md:main"
+
+[tool.setuptools]
+py-modules = ["substack2md"]
+
+[tool.setuptools.dynamic]
+version = { attr = "substack2md.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+filterwarnings = [
+    "ignore::DeprecationWarning:readability.*",
+    "ignore::DeprecationWarning:bs4.*",
+]
