@@ -54,8 +54,10 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, Optional, Tuple, List
 
@@ -651,6 +653,7 @@ class StateFile:
         self.path = base_dir / STATE_FILENAME
         self._seen: set = set()
         self._loaded = False
+        self._lock = threading.Lock()
 
     def _load(self) -> None:
         if self._loaded:
@@ -668,21 +671,23 @@ class StateFile:
             log.warning("state: could not read %s: %s", self.path, exc)
 
     def contains(self, url: str) -> bool:
-        self._load()
-        return cleanup_url(url) in self._seen
+        with self._lock:
+            self._load()
+            return cleanup_url(url) in self._seen
 
     def record(self, url: str) -> None:
-        self._load()
         cleaned = cleanup_url(url)
-        if cleaned in self._seen:
-            return
-        self._seen.add(cleaned)
-        try:
-            ensure_dir(self.path.parent)
-            with self.path.open("a", encoding="utf-8") as f:
-                f.write(cleaned + "\n")
-        except Exception as exc:
-            log.warning("state: could not append %s: %s", self.path, exc)
+        with self._lock:
+            self._load()
+            if cleaned in self._seen:
+                return
+            self._seen.add(cleaned)
+            try:
+                ensure_dir(self.path.parent)
+                with self.path.open("a", encoding="utf-8") as f:
+                    f.write(cleaned + "\n")
+            except Exception as exc:
+                log.warning("state: could not append %s: %s", self.path, exc)
 
 
 # --------------------------
@@ -855,6 +860,11 @@ Environment variables:
                          "records each successfully written URL to a .state file in "
                          "the output tree and skips already-completed URLs on the "
                          "next run.")
+    ap.add_argument("--concurrency", type=int, default=1,
+                    help="Parallel worker threads (default: 1, sequential). "
+                         "Posts from the same publication are still serialized "
+                         "to avoid bot heuristics; parallelism is across different "
+                         "publications only.")
     args = ap.parse_args()
 
     # --quiet elevates the threshold to WARNING so per-URL progress (INFO)
@@ -910,19 +920,54 @@ Environment variables:
                      len(url_list) - len(filtered), len(url_list), len(filtered))
         url_list = filtered
 
+    # Per-host serialization: posts from the same publication share a lock
+    # so we never hammer one Substack with parallel CDP fetches even if the
+    # pool size is 8.  Different publications run in parallel.
+    host_locks: Dict[str, threading.Lock] = {}
+    host_locks_mutex = threading.Lock()
+
+    def host_lock(host: str) -> threading.Lock:
+        with host_locks_mutex:
+            lock = host_locks.get(host)
+            if lock is None:
+                lock = threading.Lock()
+                host_locks[host] = lock
+            return lock
+
     completed = 0
-    try:
-        for i, url in enumerate(url_list, 1):
-            if "substack.com" not in url:
-                log.warning("Not a substack URL: %s", url)
-            out = process_url(url, base_dir, pub_mappings, args.also_save_html, args.overwrite,
-                              args.cdp_host, args.cdp_port, args.timeout, args.retries,
+    completed_lock = threading.Lock()
+
+    def worker(url: str) -> None:
+        nonlocal completed
+        if "substack.com" not in url:
+            log.warning("Not a substack URL: %s", url)
+        host = urllib.parse.urlsplit(url).netloc
+        with host_lock(host):
+            out = process_url(url, base_dir, pub_mappings, args.also_save_html,
+                              args.overwrite, args.cdp_host, args.cdp_port,
+                              args.timeout, args.retries,
                               detect_paywall=args.detect_paywall)
             if out is not None and state is not None:
                 state.record(url)
-            completed += 1
-            if i < len(url_list) and args.sleep_ms > 0:
+            if args.sleep_ms > 0:
                 time.sleep(args.sleep_ms / 1000.0)
+        with completed_lock:
+            completed += 1
+
+    try:
+        if args.concurrency <= 1:
+            for url in url_list:
+                worker(url)
+        else:
+            with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
+                futures = [pool.submit(worker, u) for u in url_list]
+                for fut in as_completed(futures):
+                    # surface any unexpected worker exception, but don't
+                    # abort the batch -- process_url already logs its own.
+                    try:
+                        fut.result()
+                    except Exception as exc:
+                        log.error("worker crashed: %s", exc)
     except KeyboardInterrupt:
         log.warning("interrupted: %d of %d URLs processed this run; "
                     "rerun the same command to resume",
