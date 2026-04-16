@@ -49,13 +49,14 @@ Issues = "https://github.com/snapsynapse/substack2md/issues"
 Changelog = "https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md"
 
 [project.scripts]
-substack2md = "substack2md:main"
+substack2md = "substack2md.cli:main"
 
-[tool.setuptools]
-py-modules = ["substack2md"]
+[tool.setuptools.packages.find]
+include = ["substack2md*"]
+exclude = ["tests*"]
 
 [tool.setuptools.dynamic]
-version = { attr = "substack2md.__version__" }
+version = { attr = "substack2md._version.__version__" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
