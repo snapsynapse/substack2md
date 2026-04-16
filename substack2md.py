@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 r"""
-substack2md v1.1.0
+substack2md
 Convert Substack posts to Markdown using your live browser session (CDP).
 
 Highlights:
@@ -57,6 +57,8 @@ import time
 import urllib.parse
 from pathlib import Path
 from typing import Dict, Optional, Tuple, List
+
+__version__ = "1.2.0"
 
 # Friendly dependency check so ImportError doesn't look mysterious
 _MISSING = []
@@ -361,7 +363,7 @@ def extract_article_fields(url: str, html: str) -> Tuple[Dict, str]:
 
     date_pub = (ld.get("datePublished") if ld else None) or ""
     date_mod = (ld.get("dateModified") if ld else None) or ""
-    retrieved = dt.datetime.utcnow().isoformat() + "Z"
+    retrieved = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     img_url = (ld.get("image") if ld else None) or ""
     if isinstance(img_url, dict):
         img_url = img_url.get("url") or ""
@@ -557,7 +559,7 @@ def with_frontmatter(fields: Dict, body_md: str) -> str:
         "audience": fields.get("audience"),
         "links_internal": fields.get("links_internal",0),
         "links_external": fields.get("links_external",0),
-        "source": fields.get("source","substack2md v1.1.0"),
+        "source": fields.get("source", f"substack2md v{__version__}"),
     }
     fm = {k:v for k,v in fm.items() if v is not None}
     front = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).strip()
@@ -640,7 +642,7 @@ def process_from_md(md_path: Path, base_dir: Path, pub_mappings: Dict[str, str],
         "video_url": "",
         "links_internal": 0,
         "links_external": 0,
-        "source": "substack2md v1.1.0",
+        "source": f"substack2md v{__version__}",
     }
 
     # Use configurable publication name mapping

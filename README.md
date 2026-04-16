@@ -25,7 +25,7 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/substack2md.git
+git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
 
 # Install dependencies
@@ -178,7 +178,7 @@ is_paid: false
 audience: "everyone"
 links_internal: 3
 links_external: 12
-source: "substack2md v1.1.0"
+source: "substack2md v1.2.0"
 ---
 
 Content starts here...
@@ -189,9 +189,15 @@ Content starts here...
 When `--detect-paywall` is passed, substack2md queries Substack's public API to determine whether each post is free or subscriber-only. This adds two fields to the YAML frontmatter:
 
 - **`is_paid`** (`true`/`false`/`null`) — whether the post requires a paid subscription
-- **`audience`** (`"everyone"` or `"only_paid"` or `null`) — the audience scope set by the author
+- **`audience`** — the raw Substack audience enum; known values:
+  - `everyone` — public, free to read
+  - `only_free` — requires a free subscription (not paywalled)
+  - `only_paid` — requires a paid subscription
+  - `founding` — requires founding-member subscription (paid)
 
-This is opt-in and requires no additional authentication — the metadata endpoint is public.
+If Substack returns an unrecognized audience value (a new tier), `audience` is preserved verbatim and `is_paid` is set to `null` so downstream workflows treat the post as "status unknown" rather than silently classifying it as free. On API failure (non-200, timeout, non-JSON) both fields are `null` and the pipeline continues.
+
+This is opt-in and requires no additional authentication; the metadata endpoint is public.
 
 **Why this matters:** If you have a paid subscription, CDP will fetch the full content of subscriber-only posts. The paywall metadata lets you build guardrails in your own workflows to avoid accidentally sharing or redistributing content that creators intended for paying subscribers only. Respect the creators whose work you value enough to pay for.
 
