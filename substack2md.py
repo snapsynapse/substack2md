@@ -170,7 +170,46 @@ def normalize_tags(tags: List[str]) -> List[str]:
         out.insert(0, "substack")
     return out
 
-def fetch_paywall_status(publication: str, slug: str) -> Dict:
+SUBSTACK_HOST_RE = re.compile(r"https?://([a-z0-9-]+)\.substack\.com/p/([^/?#]+)", re.I)
+
+def resolve_substack_canonical(html: str) -> Tuple[Optional[str], Optional[str]]:
+    """Find the canonical `<publication>.substack.com/p/<slug>` URL in a page.
+
+    Substack publications with custom domains (e.g. stratechery.com) still
+    embed the canonical Substack URL in `<link rel="canonical">` or
+    `<meta property="og:url">`.  Returns ``(publication, slug)`` when found,
+    else ``(None, None)``.  The caller can fall back to its original
+    derivation if nothing matches.
+    """
+    try:
+        soup = BeautifulSoup(html, "lxml")
+    except Exception:
+        return (None, None)
+
+    candidates = []
+    link = soup.find("link", attrs={"rel": "canonical"})
+    if link and link.get("href"):
+        candidates.append(link["href"])
+    og = soup.find("meta", attrs={"property": "og:url"})
+    if og and og.get("content"):
+        candidates.append(og["content"])
+    # ld+json may include a Substack URL in "@id" or "mainEntityOfPage"
+    ld = parse_ld_json(soup)
+    for key in ("@id", "mainEntityOfPage", "url"):
+        v = ld.get(key)
+        if isinstance(v, str):
+            candidates.append(v)
+        elif isinstance(v, dict) and isinstance(v.get("@id"), str):
+            candidates.append(v["@id"])
+
+    for href in candidates:
+        m = SUBSTACK_HOST_RE.search(href)
+        if m:
+            return (m.group(1).lower(), m.group(2))
+    return (None, None)
+
+
+def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> Dict:
     """Query Substack's public API for paywall/audience metadata.
 
     Substack exposes ``/api/v1/posts/{slug}`` on every publication subdomain.
@@ -206,7 +245,8 @@ def fetch_paywall_status(publication: str, slug: str) -> Dict:
     api_url = f"https://{publication}.substack.com/api/v1/posts/{slug}"
     try:
         resp = requests.get(api_url, headers={"Accept": "application/json",
-                                               "User-Agent": "substack2md"}, timeout=10)
+                                               "User-Agent": f"substack2md/{__version__}"},
+                            timeout=timeout)
         if resp.status_code == 200:
             data = resp.json()
             audience = data.get("audience")
@@ -476,26 +516,29 @@ class CDPClient:
         targetId = res.get("targetId")
         if not targetId:
             raise RuntimeError("Could not create target")
-        res = self.send("Target.attachToTarget", {"targetId": targetId, "flatten": True})
-        sessionId = res.get("sessionId")
-        if not sessionId:
-            raise RuntimeError("Failed to attach to target")
-        self.send("Page.enable", sessionId=sessionId)
-        self.send("Page.navigate", {"url": url}, sessionId=sessionId)
         try:
-            self.recv_event_until("Page.loadEventFired", sessionId=sessionId, timeout=self.timeout)
-        except TimeoutError:
-            pass
-        res = self.send("Runtime.evaluate", {
-            "expression": "document.documentElement.outerHTML",
-            "returnByValue": True
-        }, sessionId=sessionId)
-        html = res.get("result", {}).get("value", "")
-        try:
-            self.send("Target.closeTarget", {"targetId": targetId})
-        except Exception:
-            pass
-        return html
+            res = self.send("Target.attachToTarget", {"targetId": targetId, "flatten": True})
+            sessionId = res.get("sessionId")
+            if not sessionId:
+                raise RuntimeError("Failed to attach to target")
+            self.send("Page.enable", sessionId=sessionId)
+            self.send("Page.navigate", {"url": url}, sessionId=sessionId)
+            try:
+                self.recv_event_until("Page.loadEventFired", sessionId=sessionId, timeout=self.timeout)
+            except TimeoutError:
+                pass
+            res = self.send("Runtime.evaluate", {
+                "expression": "document.documentElement.outerHTML",
+                "returnByValue": True
+            }, sessionId=sessionId)
+            return res.get("result", {}).get("value", "")
+        finally:
+            # Always close the Chrome target, even if navigation or eval
+            # raised. Leaked targets accumulate during long batches.
+            try:
+                self.send("Target.closeTarget", {"targetId": targetId})
+            except Exception:
+                pass
 
 # --------------------------
 # Link rewriting against vault
@@ -582,7 +625,18 @@ def process_url(url: str, base_dir: Path, pub_mappings: Dict[str, str],
 
             # Paywall detection via Substack public API
             if detect_paywall:
-                pw = fetch_paywall_status(fields["publication"], fields["slug"])
+                pw_pub = fields["publication"]
+                pw_slug = fields["slug"]
+                # Custom-domain publications (e.g. stratechery.com) embed
+                # the canonical `<sub>.substack.com/p/<slug>` URL in the
+                # page.  Prefer that when available so the API call
+                # reaches the right host.
+                canon_pub, canon_slug = resolve_substack_canonical(html)
+                if canon_pub:
+                    pw_pub = canon_pub
+                if canon_slug:
+                    pw_slug = canon_slug
+                pw = fetch_paywall_status(pw_pub, pw_slug, timeout=timeout)
                 fields["is_paid"] = pw["is_paid"]
                 fields["audience"] = pw["audience"]
             

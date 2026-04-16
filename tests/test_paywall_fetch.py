@@ -226,13 +226,8 @@ def test_sends_accept_and_user_agent_headers():
     assert req.headers["User-Agent"]  # non-empty
 
 
-def test_timeout_is_finite(monkeypatch):
-    """
-    Sanity check: a timeout is passed to requests.get.  The PR hardcodes 10s
-    and ignores the --timeout CLI flag.  Consider threading --timeout
-    through to fetch_paywall_status before merge so a single slow API call
-    can't stall a large batch.
-    """
+def test_timeout_default_is_finite(monkeypatch):
+    """Default timeout must be finite so a single slow API call can't stall a batch."""
     seen = {}
 
     def fake_get(url, headers=None, timeout=None):
@@ -247,5 +242,22 @@ def test_timeout_is_finite(monkeypatch):
     monkeypatch.setattr(substack2md.requests, "get", fake_get)
     substack2md.fetch_paywall_status(PUB, SLUG)
     assert seen["timeout"] is not None
-    assert seen["timeout"] > 0
-    assert seen["timeout"] < 120  # finite-and-reasonable
+    assert 0 < seen["timeout"] < 120
+
+
+def test_timeout_parameter_is_threaded_through(monkeypatch):
+    """Explicit timeout arg must reach requests.get unchanged."""
+    seen = {}
+
+    def fake_get(url, headers=None, timeout=None):
+        seen["timeout"] = timeout
+
+        class R:
+            status_code = 200
+            def json(self_inner):
+                return {"audience": "everyone"}
+        return R()
+
+    monkeypatch.setattr(substack2md.requests, "get", fake_get)
+    substack2md.fetch_paywall_status(PUB, SLUG, timeout=3.5)
+    assert seen["timeout"] == 3.5

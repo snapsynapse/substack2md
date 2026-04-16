@@ -94,6 +94,31 @@ def fake_cdp(monkeypatch):
     return FakeClient
 
 
+@pytest.fixture
+def fake_cdp_custom_domain(monkeypatch):
+    """A custom-domain Substack publication that embeds its canonical subdomain."""
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def fetch_html(self, url):
+            return """
+            <html><head>
+              <title>Hello</title>
+              <meta name="author" content="A. Writer">
+              <link rel="canonical" href="https://realpub.substack.com/p/canonical-slug">
+            </head><body>
+              <h1>Hello</h1>
+              <article><p>Body text here with enough words to pass
+              readability's heuristic threshold, padding padding padding
+              padding padding padding padding padding padding padding.</p>
+              </article>
+            </body></html>
+            """
+    monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
+    return FakeClient
+
+
 def test_paywall_not_called_when_flag_off(monkeypatch, tmp_path, fake_cdp):
     called = {"count": 0}
 
@@ -116,8 +141,8 @@ def test_paywall_not_called_when_flag_off(monkeypatch, tmp_path, fake_cdp):
 def test_paywall_called_once_with_correct_args(monkeypatch, tmp_path, fake_cdp):
     seen = []
 
-    def spy(publication, slug):
-        seen.append((publication, slug))
+    def spy(publication, slug, timeout=10.0):
+        seen.append((publication, slug, timeout))
         return {"is_paid": True, "audience": "only_paid"}
 
     monkeypatch.setattr(substack2md, "fetch_paywall_status", spy)
@@ -126,13 +151,15 @@ def test_paywall_called_once_with_correct_args(monkeypatch, tmp_path, fake_cdp):
         base_dir=tmp_path,
         pub_mappings={},
         also_save_html=False, overwrite=True,
-        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        cdp_host="x", cdp_port=0, timeout=7, retries=1,
         detect_paywall=True,
     )
     assert len(seen) == 1
-    pub, slug = seen[0]
+    pub, slug, timeout = seen[0]
     assert pub == "examplepub"
     assert slug == "hello"
+    # CLI --timeout should thread through to the paywall HTTP call
+    assert timeout == 7
     assert out is not None and Path(out).exists()
     # Produced file carries the paywall fields
     text = Path(out).read_text()
@@ -140,10 +167,42 @@ def test_paywall_called_once_with_correct_args(monkeypatch, tmp_path, fake_cdp):
     assert "audience: only_paid" in text
 
 
+# --- Custom-domain canonical resolution ------------------------------------
+
+def test_custom_domain_uses_canonical_substack_subdomain(
+        monkeypatch, tmp_path, fake_cdp_custom_domain):
+    """
+    When the input URL is a custom domain but the page's canonical link
+    points to `<pub>.substack.com/p/<slug>`, the paywall call must hit
+    the canonical subdomain, not the netloc-derived prefix.
+    """
+    seen = []
+
+    def spy(publication, slug, timeout=10.0):
+        seen.append((publication, slug))
+        return {"is_paid": True, "audience": "only_paid"}
+
+    monkeypatch.setattr(substack2md, "fetch_paywall_status", spy)
+    out = substack2md.process_url(
+        "https://custom-domain.example.com/2026/some-post",
+        base_dir=tmp_path,
+        pub_mappings={},
+        also_save_html=False, overwrite=True,
+        cdp_host="x", cdp_port=0, timeout=1, retries=1,
+        detect_paywall=True,
+    )
+    assert out is not None
+    assert len(seen) == 1
+    pub, slug = seen[0]
+    # Canonical resolver should have overridden the netloc-derived values
+    assert pub == "realpub"
+    assert slug == "canonical-slug"
+
+
 # --- C4: API failure must not kill the pipeline ---------------------------
 
 def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
-    def failing(pub, slug):
+    def failing(pub, slug, timeout=10.0):
         return {"is_paid": None, "audience": None}
 
     monkeypatch.setattr(substack2md, "fetch_paywall_status", failing)
