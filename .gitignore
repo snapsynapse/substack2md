@@ -190,6 +190,9 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# Claude Code session state (worktrees, agent scratch)
+.claude/
+
 # PyPI configuration file
 .pypirc
 
