@@ -261,3 +261,6 @@ __cache__/
 notes.txt
 TODO.md
 scratch.md
+
+# --- baseline additions (automated audit 2026-04-21) ---
+node_modules/
