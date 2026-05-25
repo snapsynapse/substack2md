@@ -20,6 +20,7 @@ from ._core import (
     CDPClient,
     # resume state
     StateFile,
+    UnsafeOutputPathError,
     __version__,
     # link rewriting
     build_url_to_note_map,
@@ -38,6 +39,7 @@ from ._core import (
     log,
     normalize_tags,
     parse_ld_json,
+    publication_output_dir,
     remove_blank_after_headings,
     requests,  # noqa: F401
     # paywall
@@ -62,11 +64,13 @@ __all__ = [
     "LINK_RE",
     "TIME_RE",
     "SPEAKER_RE",
+    "UnsafeOutputPathError",
     "load_config",
     "get_publication_name",
     "slugify",
     "sanitize_filename",
     "ensure_dir",
+    "publication_output_dir",
     "normalize_tags",
     "cleanup_url",
     "scrub_transcript_lines",

@@ -23,6 +23,7 @@ from pathlib import Path
 # package here (instead of binding the names locally) achieves that.
 from ._core import (
     TEASER_WORD_THRESHOLD,
+    UnsafeOutputPathError,
     __version__,
     build_url_to_note_map,
     cleanup_url,
@@ -32,6 +33,7 @@ from ._core import (
     load_config,
     log,
     normalize_tags,
+    publication_output_dir,
     remove_blank_after_headings,
     rewrite_internal_links,
     sanitize_filename,
@@ -102,7 +104,7 @@ def process_url(
 
             pub_pretty = get_publication_name(fields["publication"], pub_mappings)
 
-            target_dir = base_dir / pub_pretty
+            target_dir = publication_output_dir(base_dir, pub_pretty)
             ensure_dir(target_dir)
             fname = f"{fields['published']}-{fields['slug']}.md"
             out_path = target_dir / sanitize_filename(fname)
@@ -119,6 +121,9 @@ def process_url(
             if also_save_html:
                 out_path.with_suffix(".html").write_text(html, encoding="utf-8")
             return out_path
+        except UnsafeOutputPathError as e:
+            log.error("fail: %s (%s)", url, e)
+            return None
         except Exception as e:
             last_err = e
             time.sleep(0.6 * attempt)  # simple backoff
@@ -174,7 +179,7 @@ def process_from_md(
 
     pub_pretty = get_publication_name(publication, pub_mappings)
 
-    target_dir = base_dir / pub_pretty
+    target_dir = publication_output_dir(base_dir, pub_pretty)
     ensure_dir(target_dir)
 
     fname = f"{fields['published']}-{fields['slug']}.md"

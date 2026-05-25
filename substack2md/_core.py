@@ -13,7 +13,6 @@ import json
 import logging
 import os
 import re
-import sys
 import threading
 import urllib.parse
 from pathlib import Path
@@ -49,9 +48,9 @@ for _mod, _pip in [
     _need(_mod, _pip)
 
 if _MISSING:
-    print("[deps] Missing modules:", ", ".join(_MISSING))
-    print("Run:\n  pip install " + " ".join(_MISSING))
-    sys.exit(1)
+    missing = ", ".join(_MISSING)
+    install_cmd = "pip install " + " ".join(_MISSING)
+    raise ImportError(f"Missing required dependencies: {missing}. Run:\n  {install_cmd}")
 
 import requests
 import yaml
@@ -123,6 +122,29 @@ def sanitize_filename(text: str) -> str:
 
 def ensure_dir(p: Path) -> None:
     p.mkdir(parents=True, exist_ok=True)
+
+
+class UnsafeOutputPathError(ValueError):
+    """Raised when output path configuration would escape the archive root."""
+
+
+def publication_output_dir(base_dir: Path, publication_dir: str) -> Path:
+    """Return a publication output directory confined under base_dir."""
+    name = str(publication_dir).strip()
+    rel = Path(name)
+    if not name or rel.is_absolute() or any(part in (".", "..") for part in rel.parts):
+        raise UnsafeOutputPathError(
+            f"invalid publication directory {publication_dir!r}: must be relative to base_dir"
+        )
+
+    root = base_dir.expanduser().resolve()
+    candidate = (base_dir / rel).expanduser()
+    resolved = candidate.resolve()
+    if resolved == root or not resolved.is_relative_to(root):
+        raise UnsafeOutputPathError(
+            f"invalid publication directory {publication_dir!r}: would write outside {base_dir}"
+        )
+    return candidate
 
 
 def normalize_tags(tags: list[str]) -> list[str]:
@@ -494,7 +516,7 @@ class CDPClient:
         self.msg_id = 0
 
     def connect(self):
-        resp = requests.get(f"http://{self.host}:{self.port}/json/version")
+        resp = requests.get(f"http://{self.host}:{self.port}/json/version", timeout=self.timeout)
         ws_url = resp.json()["webSocketDebuggerUrl"]
         self.ws = create_connection(ws_url, timeout=self.timeout)
 

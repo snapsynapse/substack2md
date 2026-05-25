@@ -7,7 +7,7 @@ base_dir: ~/Documents/substack-notes
 
 # Custom publication name mappings
 # Key: publication slug from URL (e.g., 'daveshap' from daveshap.substack.com)
-# Value: directory name you want to use
+# Value: relative directory under base_dir. Absolute paths and '..' are rejected.
 publication_mappings:
   # Example mappings for common newsletters
   # signalsandsubtractions: Signals_And_Subtractions

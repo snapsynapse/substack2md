@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- Confine publication mapping output directories to `base_dir`; absolute paths and `..` components are rejected.
+- Apply the configured CDP timeout to the initial `/json/version` discovery request.
+- Raise `ImportError` for missing runtime dependencies instead of terminating the importing process with `sys.exit`.
+
+### Tests
+
+- Add regression coverage for CDP timeout/cleanup behavior, output path confinement, and missing-dependency import behavior.
 
 ## [2.0.0] - 2026-04-16
 

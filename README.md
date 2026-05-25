@@ -191,6 +191,8 @@ publication_mappings:
   daveshap: David_Shapiro
 ```
 
+Mapping values are treated as relative directories under `base_dir`. Absolute paths and `..` components are rejected so a config mistake cannot write outside your archive root.
+
 See `config.yaml.example` for a template.
 
 ## Usage Examples
