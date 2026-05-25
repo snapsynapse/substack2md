@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+_Nothing yet._
+
+## [2.1.1] - 2026-05-25
+
 ### Fixed
 
 - Move the GuideCheck canonical guide path to `.well-known/assistant-guide.txt` while keeping the root copy byte-identical for repository discovery.
@@ -83,7 +87,8 @@ Major release. Restructures the project from a single-file script into an instal
 
 First tagged reference point. CDP-driven Substack-to-markdown converter with Obsidian wikilink rewriting, publication mapping, transcript cleanup, and batch URL file support.
 
-[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/snapsynapse/substack2md/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/snapsynapse/substack2md/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/snapsynapse/substack2md/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/snapsynapse/substack2md/releases/tag/v1.1.0
