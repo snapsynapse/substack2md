@@ -3,7 +3,7 @@
   "guide-version": "1.0.0",
   "guide-sha256": "20b3adc06be2145a6a6f6289df57b0123950e0d581bb7d38a17facc74349f57c",
   "guide-bytes": 6290,
-  "immutable-release-url": "https://raw.githubusercontent.com/snapsynapse/substack2md/main/.well-known/assistant-guide.txt",
+  "immutable-release-url": "https://raw.githubusercontent.com/snapsynapse/substack2md/c896f2adb9a4b31ab4aebb8f9bd18aceba8b1e1f/.well-known/assistant-guide.txt",
   "profile": "human-verifiable-assistant-guide",
   "profile-version": "0.3.0"
 }
