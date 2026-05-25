@@ -73,12 +73,8 @@ def test_assistant_guide_required_metadata_and_manifest_link():
     assert required <= set(metadata)
     assert metadata["profile"] == "human-verifiable-assistant-guide"
     assert metadata["profile-version"] == "0.3.0"
-    assert metadata["canonical-url"] == (
-        "https://snapsynapse.github.io/substack2md/.well-known/assistant-guide.txt"
-    )
-    assert metadata["manifest-url"] == (
-        "https://snapsynapse.github.io/substack2md/assistant-guide.manifest.json"
-    )
+    assert metadata["canonical-url"] == "https://substack2md.space/.well-known/assistant-guide.txt"
+    assert metadata["manifest-url"] == "https://substack2md.space/assistant-guide.manifest.json"
     assert metadata["recommended-verifier"] == "https://guidecheck.org/verify"
 
 

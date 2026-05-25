@@ -1,9 +1,9 @@
 {
   "guide-path": ".well-known/assistant-guide.txt",
   "guide-version": "1.0.0",
-  "guide-sha256": "bb4dc05b0e221851dbe17c782c31d073b8bb483297ad7b18597b3d73cfccd08c",
-  "guide-bytes": 6227,
-  "immutable-release-url": "https://snapsynapse.github.io/substack2md/.well-known/assistant-guide.txt",
+  "guide-sha256": "18fc3614e3cb35d4b2b084fd69e9b1bd6502f08c858a99c5b02f3657e94f23af",
+  "guide-bytes": 6151,
+  "immutable-release-url": "https://substack2md.space/.well-known/assistant-guide.txt",
   "profile": "human-verifiable-assistant-guide",
   "profile-version": "0.3.0"
 }

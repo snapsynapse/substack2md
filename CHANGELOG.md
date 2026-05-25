@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - Serve the GuideCheck assistant guide from the project GitHub Pages `.well-known` URL so verifiers can discover the standard location.
 - Keep repository, root, and Pages guide copies byte-identical and mirror the manifest into the Pages source.
+- Move the GuideCheck canonical URL to `https://substack2md.space/.well-known/assistant-guide.txt`.
 
 ## [2.1.1] - 2026-05-25
 
