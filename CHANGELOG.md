@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - Add a GuideCheck `assistant-guide.txt` AI-assisted install path with a sidecar manifest and package metadata link.
+- Document how users and maintainers should verify and maintain the AI-assisted install guide.
 
 ### Tests
 

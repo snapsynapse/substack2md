@@ -28,6 +28,15 @@ Do not:
 
 When `--detect-paywall` is enabled, substack2md makes unauthenticated HTTPS calls to `https://<publication>.substack.com/api/v1/posts/<slug>`. The User-Agent is `substack2md/<version>`. No cookies, credentials, or personal data are sent. The endpoint is publicly accessible.
 
+## AI-assisted install guide
+
+The repository includes `assistant-guide.txt` and `assistant-guide.manifest.json` for GuideCheck-style AI-assisted local installation. Treat these files as security-relevant operational instructions:
+
+- Review the full plain-text guide before authorizing an assistant to act.
+- Verify the guide and manifest with a conformant verifier such as https://guidecheck.org/verify.
+- Do not treat GuideCheck conformance as proof that commands, dependencies, or publishers are safe.
+- Keep the guide and manifest in sync with install, dependency, test, lint, and local setup changes.
+
 ## Reporting a vulnerability
 
 If you find a security issue:
