@@ -29,6 +29,15 @@ cd substack2md
 pip install .
 ```
 
+## AI-Assisted Installation
+
+This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-assisted local install:
+
+- `assistant-guide.txt`
+- `assistant-guide.manifest.json`
+
+Before asking an assistant to follow it, verify the guide with a conformant verifier such as https://guidecheck.org/verify, review the full plain-text guide yourself, and approve the reported level. The guide is written for GuideCheck profile `0.3.0` and includes Level 4 provenance metadata.
+
 For development work:
 
 ```bash

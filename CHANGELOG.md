@@ -12,9 +12,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Apply the configured CDP timeout to the initial `/json/version` discovery request.
 - Raise `ImportError` for missing runtime dependencies instead of terminating the importing process with `sys.exit`.
 
+### Added
+
+- Add a GuideCheck `assistant-guide.txt` AI-assisted install path with a sidecar manifest and package metadata link.
+
 ### Tests
 
 - Add regression coverage for CDP timeout/cleanup behavior, output path confinement, and missing-dependency import behavior.
+- Add local checks for GuideCheck byte-profile constraints and manifest hash agreement.
 
 ## [2.0.0] - 2026-04-16
 

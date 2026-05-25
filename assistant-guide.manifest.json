@@ -1,0 +1,9 @@
+{
+  "guide-path": "assistant-guide.txt",
+  "guide-version": "1.0.0",
+  "guide-sha256": "a71d512aa2b38a44838b4a26c9963e8802753855c8a51a197587bc16f2d63bde",
+  "guide-bytes": 6254,
+  "immutable-release-url": "https://raw.githubusercontent.com/snapsynapse/substack2md/main/assistant-guide.txt",
+  "profile": "human-verifiable-assistant-guide",
+  "profile-version": "0.3.0"
+}
