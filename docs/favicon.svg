@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#0f1117"/>
+  <rect x="3.5" y="3.5" width="25" height="25" rx="5.5" fill="none" stroke="#f59e42" stroke-width="2"/>
+  <text x="16" y="21" text-anchor="middle" font-family="'SF Mono', Menlo, monospace" font-weight="700" font-size="11" fill="#fbb471">s2md</text>
+</svg>

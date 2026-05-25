@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://substack2md.space/sitemap.xml

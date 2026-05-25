@@ -1,0 +1,34 @@
+# substack2md
+
+Substack posts to clean, Obsidian-friendly Markdown.
+
+substack2md is a Python command-line tool that converts Substack posts to clean Markdown using your authenticated Chrome browser session via the Chrome DevTools Protocol (CDP). It produces YAML frontmatter, [[YYYY-MM-DD-slug]] wikilinks for cross-references, and rewrites images and embeds as plain links so the output is portable across Obsidian, static site generators, and plain text editors. Optional paywall detection tags posts as free or subscriber-only via Substack's public API.
+
+## Key concepts
+
+- Browser-session auth via Chrome DevTools Protocol — no passwords, no credentials handled by the tool
+- YAML frontmatter on every post (title, author, publication, url, date, access, tags)
+- Obsidian wikilinks ([[YYYY-MM-DD-slug]]) for internal cross-references
+- Sequential batch processing with configurable sleep between requests
+- Publication slug to folder name mapping for organized output
+- Transcript cleaning (strips timestamps and speaker labels from podcast transcripts)
+- Paywall detection via Substack's public API, opt-in
+- Ships with a GuideCheck human-verifiable assistant guide for AI-assisted local install
+
+## Key files
+
+- README.md — usage and configuration
+- CHANGELOG.md — version history
+- .well-known/assistant-guide.txt — GuideCheck assistant guide (profile 0.3.0, Level 4)
+- assistant-guide.manifest.json — guide integrity manifest
+- config.yaml.example — configuration template
+- urls.txt.example — batch URL list template
+
+## Links
+
+- Canonical: https://substack2md.space/
+- Repository: https://github.com/snapsynapse/substack2md
+- License: MIT (https://github.com/snapsynapse/substack2md/blob/main/LICENSE)
+- Author: Sam Rogers (https://sam-rogers.com/)
+- Publisher: Snap Synapse (https://snapsynapse.com/)
+- Related: GuideCheck (https://guidecheck.org/), Graceful Boundaries (https://gracefulboundaries.dev/)

@@ -240,6 +240,8 @@ my-*.txt
 
 # Downloaded HTML sidecar files (optional debug output)
 *.html
+# But keep the GitHub Pages landing site
+!docs/**/*.html
 
 # Test output directories
 test-output/

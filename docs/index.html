@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <title>substack2md &mdash; Substack posts to clean Markdown</title>
+  <meta name="description" content="Bulk-export Substack posts as Obsidian-friendly Markdown via your authenticated browser session. YAML frontmatter, wikilinks, paywall tagging.">
+  <meta name="keywords" content="substack export, substack to markdown, substack scraper, obsidian import, bulk export substack, substack backup, CDP, chrome devtools protocol, markdown converter, substack archive">
+  <meta name="author" content="Sam Rogers">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+  <meta name="theme-color" content="#f59e42">
+  <link rel="canonical" href="https://substack2md.space/">
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="mask-icon" href="/favicon.svg" color="#fbb471">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="alternate" type="text/plain" href="https://substack2md.space/llms.txt" title="LLM-readable summary">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="substack2md">
+  <meta property="og:title" content="substack2md">
+  <meta property="og:description" content="Substack posts to clean, Obsidian-friendly Markdown. Browser-session auth, no passwords.">
+  <meta property="og:image" content="https://substack2md.space/imgs/og.png">
+  <meta property="og:image:alt" content="substack2md &mdash; Substack posts to clean Markdown">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:url" content="https://substack2md.space/">
+  <meta property="og:locale" content="en_US">
+  <meta property="article:published_time" content="2025-10-20T00:00:00Z">
+  <meta property="article:modified_time" content="2026-05-24T00:00:00Z">
+  <meta property="article:author" content="Sam Rogers">
+  <meta property="article:publisher" content="https://snapsynapse.com/">
+  <meta property="article:section" content="Tools">
+  <meta property="article:tag" content="substack2md">
+  <meta property="article:tag" content="substack-export">
+  <meta property="article:tag" content="markdown">
+  <meta property="article:tag" content="obsidian">
+  <meta property="article:tag" content="cdp">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="substack2md">
+  <meta name="twitter:description" content="Substack posts to clean, Obsidian-friendly Markdown. Browser-session auth, no passwords.">
+  <meta name="twitter:image" content="https://substack2md.space/imgs/og.png">
+  <meta name="twitter:site" content="@snapsynapse">
+  <meta name="twitter:creator" content="@snapsynapse">
+
+  <!-- Identity verification (IndieWeb rel=me) -->
+  <link rel="me" href="https://github.com/snapsynapse">
+  <link rel="me" href="https://www.linkedin.com/in/samrogers">
+
+  <!-- JSON-LD: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "substack2md",
+    "alternateName": ["substack-to-markdown", "s2md"],
+    "description": "Command-line tool that converts Substack posts to clean, Obsidian-friendly Markdown using your authenticated Chrome session via the Chrome DevTools Protocol. Produces YAML frontmatter, [[wikilink]] cross-references, image-and-embed-as-link rewriting, and optional paywall tagging.",
+    "url": "https://substack2md.space/",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "macOS, Linux, Windows",
+    "softwareVersion": "2.1.1",
+    "datePublished": "2025-10-20",
+    "dateModified": "2026-05-24",
+    "license": "https://github.com/snapsynapse/substack2md/blob/main/LICENSE",
+    "codeRepository": "https://github.com/snapsynapse/substack2md",
+    "programmingLanguage": "Python",
+    "downloadUrl": "https://github.com/snapsynapse/substack2md",
+    "image": "https://substack2md.space/imgs/og.png",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "author": {
+      "@type": "Person",
+      "name": "Sam Rogers",
+      "url": "https://sam-rogers.com/"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "Snap Synapse",
+      "url": "https://snapsynapse.com/"
+    },
+    "keywords": ["substack export", "substack to markdown", "obsidian import", "chrome devtools protocol", "markdown converter"],
+    "sameAs": [
+      "https://github.com/snapsynapse/substack2md"
+    ]
+  }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --bg-alt: #1a1d27;
+      --surface2: #242836;
+      --text: #e1e4ed;
+      --text-muted: #8b90a0;
+      --accent: #f59e42;
+      --accent-hover: #fbb471;
+      --border: #2e3345;
+      --green: #4ecb71;
+      --red: #ff6b6b;
+      --code-bg: #0b0d13;
+      --code-text: #e1e4ed;
+      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --mono: "SF Mono", "Fira Code", "Fira Mono", Menlo, Consolas, monospace;
+      --max-width: 960px;
+      --radius: 10px;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: 0;
+      background: var(--accent);
+      color: #0f1117;
+      padding: 0.5rem 1rem;
+      z-index: 100;
+    }
+    .skip-link:focus { left: 0; }
+
+    .container { max-width: var(--max-width); margin: 0 auto; padding: 0 1.5rem; }
+
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    nav .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    nav .logo {
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+    nav .logo svg { color: var(--accent-hover); flex: 0 0 auto; }
+    nav .logo:hover svg { color: var(--accent); }
+    nav .links { display: flex; align-items: center; gap: 1.5rem; font-size: 0.9rem; }
+    nav .links a { color: var(--text-muted); }
+    nav .links a:hover { color: var(--text); text-decoration: none; }
+
+    .gh-star {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg-alt);
+      color: var(--text) !important;
+      font-weight: 600;
+      font-size: 0.8rem;
+      transition: border-color 0.1s ease, transform 0.05s ease;
+    }
+    .gh-star:hover {
+      border-color: var(--accent);
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+    .gh-star svg { flex: 0 0 auto; color: #eab308; }
+    .gh-star span { white-space: nowrap; }
+
+    .byline {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin: 0.75rem 0 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 0.9rem;
+      align-items: center;
+      justify-content: center;
+    }
+    .byline .sep { color: var(--border); }
+    .byline a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 2px; }
+    .byline a:hover { color: var(--accent-hover); text-decoration-color: var(--accent-hover); }
+    .byline .version {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+      background: var(--bg-alt);
+      color: var(--accent);
+      border: 1px solid var(--border);
+    }
+
+    .canonical-note {
+      margin-top: 2.5rem;
+      padding: 1rem 1.25rem;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .canonical-note strong { color: var(--text); }
+    .canonical-note a { text-decoration: underline; text-underline-offset: 2px; }
+
+    section { padding: 4rem 0; }
+    section.alt { background: var(--bg-alt); }
+
+    h1 { font-size: 2.75rem; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; }
+    h2 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.5rem; letter-spacing: -0.01em; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+    p { margin-bottom: 1rem; }
+    p:last-child { margin-bottom: 0; }
+
+    .hero { padding: 5rem 0 4rem; text-align: center; }
+    .hero h1 { margin-bottom: 1rem; }
+    .hero .subtitle {
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      max-width: 680px;
+      margin: 0 auto 1.5rem;
+    }
+    .hero .hook {
+      font-size: 1rem;
+      color: var(--text-muted);
+      max-width: 620px;
+      margin: 0 auto 2.5rem;
+    }
+    .hero-img {
+      display: block;
+      width: 100%;
+      max-width: 860px;
+      height: auto;
+      margin: 0 auto 2rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+      text-align: left;
+    }
+    .pillar {
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-alt);
+    }
+    .pillar h3 { color: var(--accent); font-size: 1rem; }
+    .pillar p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 0; }
+
+    .cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-primary { background: var(--accent); color: #0f1117; }
+    .btn-primary:hover { background: var(--accent-hover); text-decoration: none; color: #0f1117; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--accent-hover);
+      border: 1px solid var(--accent);
+    }
+    .btn-secondary:hover { background: var(--accent); color: #0f1117; text-decoration: none; }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .code-block { text-align: left; }
+    .code-block h3 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+    .code-block .annotation {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+      font-style: italic;
+    }
+    .btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+    .btn-primary:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 1.25rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.5;
+      border: 1px solid var(--border);
+    }
+    code { font-family: var(--mono); font-size: 0.88em; color: var(--accent); }
+
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+    th, td {
+      text-align: left;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    th { font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .demo-block {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .demo-preview {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      text-align: left;
+      letter-spacing: 0;
+      padding: 1.25rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--code-text);
+      margin: 1.25rem 0 1.5rem;
+      white-space: pre;
+      overflow-x: auto;
+    }
+    .demo-preview .y { color: var(--accent-hover); }
+    .demo-preview .c { color: var(--text-muted); }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 0;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .footer-grid {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 2rem;
+      flex-wrap: wrap;
+    }
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-meta p { margin-bottom: 0.25rem; }
+    .footer-meta a { text-decoration: underline; text-underline-offset: 2px; }
+    .footer-links a { text-decoration: underline; text-underline-offset: 2px; text-decoration-color: var(--border); }
+    .footer-links a:hover { text-decoration-color: var(--accent-hover); }
+
+    @media (max-width: 768px) {
+      h1 { font-size: 2rem; }
+      .hero { padding: 3rem 0 2.5rem; }
+      .pillars { grid-template-columns: 1fr; }
+      .code-grid { grid-template-columns: 1fr; }
+      nav .links { display: none; }
+      nav .links.mobile-compact { display: flex; gap: 0.75rem; }
+      .footer-grid { flex-direction: column; }
+      pre { font-size: 0.75rem; }
+    }
+    @media (max-width: 520px) {
+      nav .links.mobile-compact a:not(.gh-star) { display: none; }
+      nav .container { gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main-content">Skip to content</a>
+
+<nav aria-label="Main navigation">
+  <div class="container">
+    <a href="/" class="logo" aria-label="substack2md home">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true" focusable="false">
+        <rect x="2.5" y="2.5" width="27" height="27" rx="6" stroke="currentColor" stroke-width="2.5"/>
+        <text x="16" y="21" text-anchor="middle" font-family="'SF Mono', Menlo, monospace" font-weight="700" font-size="12" fill="currentColor">s2md</text>
+      </svg>
+      <span>substack2md</span>
+    </a>
+    <div class="links mobile-compact">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#demo">Demo</a>
+      <a href="https://github.com/snapsynapse/substack2md" class="gh-star" target="_blank" rel="noopener" aria-label="Star snapsynapse/substack2md on GitHub">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"/>
+        </svg>
+        <span>Star on GitHub</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<main id="main-content">
+<section class="hero">
+  <div class="container">
+    <h1>Substack to clean Markdown.</h1>
+    <p class="subtitle">Bulk-export Substack posts as Obsidian-friendly Markdown using your authenticated browser session &mdash; no passwords, no copy-paste.</p>
+    <p class="byline">
+      By <a href="https://sam-rogers.com/" target="_blank" rel="noopener author">Sam Rogers</a>, <a href="https://snapsynapse.com/" target="_blank" rel="noopener">Snap Synapse</a>
+      <span class="sep">&middot;</span>
+      Published <time datetime="2025-10-20">October 20, 2025</time>
+      <span class="sep">&middot;</span>
+      Updated <time datetime="2026-05-24">May 24, 2026</time>
+      <span class="sep">&middot;</span>
+      <span class="version">v2.1.1</span>
+      <span class="sep">&middot;</span>
+      <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a>
+    </p>
+    <p class="hook">Substack does not let you bulk-export your reading list or subscriptions in any useful format. substack2md uses your logged-in browser via the Chrome DevTools Protocol to convert posts to clean Markdown with YAML frontmatter, image-and-embed-as-link rewriting, and <code>[[YYYY-MM-DD-slug]]</code> wikilinks for Obsidian.</p>
+
+    <img class="hero-img" src="/imgs/og.png" width="1280" height="640" alt="substack2md banner: Substack posts converted to Obsidian-friendly Markdown with frontmatter and wikilinks">
+
+    <div class="cta-row">
+      <a href="https://github.com/snapsynapse/substack2md" class="btn btn-primary" target="_blank" rel="noopener">View on GitHub</a>
+      <a href="#install" class="btn btn-secondary">Install</a>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="features">
+  <div class="container">
+    <h2>What it does</h2>
+    <p>Run substack2md against a single post URL or a text file of URLs. It opens a Chrome tab against your local browser, reads the rendered post HTML, and writes Markdown to disk organized by publication. Your Substack session cookie never leaves your machine, and no Substack credentials are ever handled by the tool.</p>
+
+    <div class="pillars">
+      <div class="pillar">
+        <h3>Browser-session auth</h3>
+        <p>Uses your existing Chrome via the Chrome DevTools Protocol. No passwords stored, no Substack credentials handled by the tool.</p>
+      </div>
+      <div class="pillar">
+        <h3>Obsidian-friendly output</h3>
+        <p>YAML frontmatter, <code>[[YYYY-MM-DD-slug]]</code> wikilinks for cross-references, images and embeds rewritten as plain links so your vault stays portable.</p>
+      </div>
+      <div class="pillar">
+        <h3>Polite and configurable</h3>
+        <p>Sequential requests with configurable sleep, publication-slug-to-folder mapping, transcript cleaning, and optional paywall tagging via Substack's public API.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">Designed for</h3>
+    <table>
+      <thead>
+        <tr><th>You want to</th><th>substack2md does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Archive your own newsletter</td><td>Walks your archive page, exports every post with paywall status preserved.</td></tr>
+        <tr><td>Read newsletters offline in Obsidian</td><td>Outputs Markdown with frontmatter and wikilinks ready to drop into a vault.</td></tr>
+        <tr><td>Build a personal corpus for search or LLM context</td><td>Plain Markdown, one file per post, structured filenames you can grep.</td></tr>
+        <tr><td>Stop accidentally sharing paid content</td><td>Optional paywall detection tags posts as <code>free</code> or <code>subscriber-only</code> in frontmatter.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section id="install">
+  <div class="container">
+    <h2>Install</h2>
+    <p>Requires Python 3.10+ and a Chrome / Chromium browser. Start Chrome with the remote debugging port, log in to Substack, then run substack2md.</p>
+
+    <div class="code-grid">
+      <div class="code-block">
+        <h3>Install</h3>
+<pre>git clone https://github.com/snapsynapse/substack2md.git
+cd substack2md
+pip install .</pre>
+      </div>
+
+      <div class="code-block">
+        <h3>Start Chrome with CDP</h3>
+<pre># macOS
+./launch-browser.sh
+
+# or manually
+chrome --remote-debugging-port=9222 \
+       --user-data-dir=/tmp/substack2md</pre>
+      </div>
+
+      <div class="code-block">
+        <h3>Convert a single post</h3>
+<pre>substack2md https://example.substack.com/p/some-post</pre>
+      </div>
+
+      <div class="code-block">
+        <h3>Batch from a URL list</h3>
+<pre>substack2md urls.txt
+# one URL per line, blank lines and # comments OK</pre>
+        <p class="annotation">See <code>urls.txt.example</code> in the repo for the expected format.</p>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 2rem;">AI-assisted install</h3>
+    <p>substack2md ships a <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> human-verifiable assistant guide (profile <code>0.3.0</code>, Level 4) so an AI assistant can install and run it locally under explicit human approval. Verify the guide with a conformant verifier before letting the assistant execute any <code>[action]</code> block.</p>
+    <ul style="list-style: none; padding-left: 0;">
+      <li>&middot; Canonical: <a href="https://substack2md.space/.well-known/assistant-guide.txt"><code>https://substack2md.space/.well-known/assistant-guide.txt</code></a></li>
+      <li>&middot; Repo path: <code>.well-known/assistant-guide.txt</code></li>
+      <li>&middot; Manifest: <code>assistant-guide.manifest.json</code></li>
+    </ul>
+  </div>
+</section>
+
+<section class="alt" id="demo">
+  <div class="container">
+    <div class="demo-block">
+      <h2>Output shape</h2>
+      <p>Each post becomes a single Markdown file with YAML frontmatter Obsidian and most static-site generators can read directly.</p>
+      <div class="demo-preview"><span class="c">---</span>
+<span class="y">title:</span> The case for boring infrastructure
+<span class="y">author:</span> A. Writer
+<span class="y">publication:</span> example
+<span class="y">url:</span> https://example.substack.com/p/boring-infrastructure
+<span class="y">date:</span> 2025-09-14
+<span class="y">access:</span> free
+<span class="y">tags:</span> [substack, infrastructure]
+<span class="c">---</span>
+
+# The case for boring infrastructure
+
+Most outages are not exotic. They are the same five
+mistakes, made in slightly different orders. See also:
+[[2025-08-02-the-five-mistakes]].
+</div>
+      <div class="cta-row">
+        <a href="https://github.com/snapsynapse/substack2md" class="btn btn-primary" target="_blank" rel="noopener">View on GitHub &rarr;</a>
+        <a href="https://github.com/snapsynapse/substack2md/blob/main/README.md" class="btn btn-secondary" target="_blank" rel="noopener">Read the README</a>
+      </div>
+    </div>
+
+    <aside class="canonical-note" role="note">
+      <strong>Canonical reference.</strong> This page is the authoritative landing for substack2md.
+      Source of truth is the <a href="https://github.com/snapsynapse/substack2md" target="_blank" rel="noopener">GitHub repository</a>;
+      this page tracks the latest released version. Last substantive revision:
+      <time datetime="2026-05-24">2026-05-24</time>.
+      <a href="https://github.com/snapsynapse/substack2md/commits/main/README.md" target="_blank" rel="noopener">Revision history &rarr;</a>
+    </aside>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-meta">
+        <p>substack2md v2.1.1 &middot; <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a></p>
+        <p>A <a href="https://snapsynapse.com/" target="_blank" rel="noopener">Snap Synapse</a> project by <a href="https://sam-rogers.com/" target="_blank" rel="noopener author">Sam Rogers</a>.</p>
+        <p style="margin-top: 0.5rem;">See also: <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> &middot; <a href="https://gracefulboundaries.dev/" target="_blank" rel="noopener">Graceful Boundaries</a> &middot; <a href="https://knowledge-as-code.com/" target="_blank" rel="noopener">Knowledge as Code</a></p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/snapsynapse/substack2md" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/snapsynapse/substack2md/blob/main/README.md" target="_blank" rel="noopener">README</a>
+        <a href="https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a>
+        <a href="https://github.com/snapsynapse/substack2md/commits/main" target="_blank" rel="noopener">Revisions</a>
+        <a href="/.well-known/assistant-guide.txt">Assistant guide</a>
+        <a href="/llms.txt">llms.txt</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

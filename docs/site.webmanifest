@@ -1,0 +1,12 @@
+{
+  "name": "substack2md",
+  "short_name": "substack2md",
+  "description": "Substack posts to clean, Obsidian-friendly Markdown.",
+  "start_url": "/",
+  "display": "minimal-ui",
+  "theme_color": "#f59e42",
+  "background_color": "#0f1117",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
