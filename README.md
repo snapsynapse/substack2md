@@ -40,6 +40,8 @@ This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-
 
 The guide is written for GuideCheck profile `0.3.0` and targets the highest guide-file conformance level, Level 4. Level 5 is not claimed here because GuideCheck reserves Level 5 for a guide plus a conformant assistant runtime.
 
+The Pages source includes `docs/_headers` so hosts that support static header rules can serve the guide with `X-Content-Type-Options: nosniff` and `Strict-Transport-Security`. GitHub Pages does not honor `_headers`; if `https://substack2md.space/` remains on GitHub Pages directly, GuideCheck will continue to warn about those response headers while still reporting Level 3.
+
 Use it this way:
 
 1. Open `.well-known/assistant-guide.txt` or the byte-identical root `assistant-guide.txt` copy and read it in full.

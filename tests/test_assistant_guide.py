@@ -7,6 +7,7 @@ ROOT_GUIDE = ROOT / "assistant-guide.txt"
 PAGES_GUIDE = ROOT / "docs" / ".well-known" / "assistant-guide.txt"
 MANIFEST = ROOT / "assistant-guide-manifest.txt"
 PAGES_MANIFEST = ROOT / "docs" / ".well-known" / "assistant-guide-manifest.txt"
+PAGES_HEADERS = ROOT / "docs" / "_headers"
 
 
 def _metadata(text: str) -> dict[str, str]:
@@ -98,6 +99,16 @@ def test_assistant_guide_manifest_matches_bytes():
     assert manifest["profile"] == "human-verifiable-assistant-guide"
     assert manifest["profile-version"] == "0.3.0"
     assert manifest["immutable-release-url"].startswith("https://")
+
+
+def test_assistant_guide_static_header_policy():
+    headers = PAGES_HEADERS.read_text(encoding="ascii")
+
+    assert "/.well-known/assistant-guide.txt" in headers
+    assert "/.well-known/assistant-guide-manifest.txt" in headers
+    assert "Content-Type: text/plain; charset=utf-8" in headers
+    assert "X-Content-Type-Options: nosniff" in headers
+    assert "Strict-Transport-Security: max-age=31536000; includeSubDomains" in headers
 
 
 def test_assistant_guide_actions_have_required_approval_gates():
