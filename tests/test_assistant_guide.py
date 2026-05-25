@@ -65,7 +65,7 @@ def test_root_assistant_guide_copy_is_byte_identical():
     assert PAGES_MANIFEST.read_bytes() == MANIFEST.read_bytes()
 
 
-def test_assistant_guide_required_metadata_and_manifest_link():
+def test_assistant_guide_required_metadata():
     text = GUIDE.read_text(encoding="ascii")
     metadata = _metadata(text)
     required = {
@@ -77,15 +77,12 @@ def test_assistant_guide_required_metadata_and_manifest_link():
         "canonical-url",
         "repository-url",
         "last-reviewed",
-        "manifest-url",
     }
     assert required <= set(metadata)
     assert metadata["profile"] == "human-verifiable-assistant-guide"
     assert metadata["profile-version"] == "0.3.0"
     assert metadata["canonical-url"] == "https://substack2md.space/.well-known/assistant-guide.txt"
-    assert metadata["manifest-url"] == (
-        "https://substack2md.space/.well-known/assistant-guide-manifest.txt"
-    )
+    assert "manifest-url" not in metadata
     assert metadata["recommended-verifier"] == "https://guidecheck.org/verify"
 
 
@@ -98,7 +95,7 @@ def test_assistant_guide_manifest_matches_bytes():
     assert manifest["guide-sha256"] == hashlib.sha256(data).hexdigest()
     assert manifest["profile"] == "human-verifiable-assistant-guide"
     assert manifest["profile-version"] == "0.3.0"
-    assert manifest["immutable-release-url"].startswith("https://")
+    assert "immutable-release-url" not in manifest
 
 
 def test_assistant_guide_static_header_policy():

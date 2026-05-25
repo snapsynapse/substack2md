@@ -38,7 +38,7 @@ This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-
 - `assistant-guide.txt`
 - `assistant-guide-manifest.txt`
 
-The guide is written for GuideCheck profile `0.3.0` and currently verifies at Level 3. Level 4 requires an independent hash anchor, and Level 5 is reserved for a guide plus a conformant assistant runtime.
+The guide is written for GuideCheck profile `0.3.0` and currently verifies at Level 3.
 
 The Pages source includes `docs/_headers` so hosts that support static header rules can serve the guide with `X-Content-Type-Options: nosniff` and `Strict-Transport-Security`. GitHub Pages does not honor `_headers`; if `https://substack2md.space/` remains on GitHub Pages directly, GuideCheck will continue to warn about those response headers while still reporting Level 3.
 
@@ -50,7 +50,7 @@ Use it this way:
 4. Confirm to your assistant that you have read the guide, understand that conformance is not safety, and approve proceeding under the reported level.
 5. Let the assistant execute only the explicit `[action]` blocks, with per-action approval where required.
 
-The canonical served path is the `substack2md.space` `.well-known` URL above. The repository path `.well-known/assistant-guide.txt`, the root `assistant-guide.txt` copy, and the Pages source copy under `docs/.well-known/assistant-guide.txt` are kept byte-identical. The sidecar manifest pins the expected guide byte count and SHA-256. Use the canonical served URL when verifying; rendered GitHub file pages and `raw.githubusercontent.com` repository paths are not the standard discoverable location for this project.
+The canonical served path is the `substack2md.space` `.well-known` URL above. The repository path `.well-known/assistant-guide.txt`, the root `assistant-guide.txt` copy, and the Pages source copy under `docs/.well-known/assistant-guide.txt` are kept byte-identical. The sidecar manifest is maintained as a local integrity aid for byte count and SHA-256. Use the canonical served URL when verifying; rendered GitHub file pages and `raw.githubusercontent.com` repository paths are not the standard discoverable location for this project.
 
 For development work:
 

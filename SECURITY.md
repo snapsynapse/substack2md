@@ -30,10 +30,10 @@ When `--detect-paywall` is enabled, substack2md makes unauthenticated HTTPS call
 
 ## AI-assisted install guide
 
-The repository includes `.well-known/assistant-guide.txt`, a byte-identical root `assistant-guide.txt` copy, a GitHub Pages source copy under `docs/.well-known/assistant-guide.txt`, and `assistant-guide-manifest.txt` for GuideCheck-style AI-assisted local installation. Treat these files as security-relevant operational instructions:
+The repository includes `.well-known/assistant-guide.txt`, a byte-identical root `assistant-guide.txt` copy, a GitHub Pages source copy under `docs/.well-known/assistant-guide.txt`, and `assistant-guide-manifest.txt` for GuideCheck-style AI-assisted local installation. The served guide currently targets Level 3, and the manifest is maintained as a local integrity aid. Treat these files as security-relevant operational instructions:
 
 - Review the full plain-text guide before authorizing an assistant to act.
-- Verify the guide and manifest with a conformant verifier such as https://guidecheck.org/verify.
+- Verify the guide with a conformant verifier such as https://guidecheck.org/verify.
 - Do not treat GuideCheck conformance as proof that commands, dependencies, or publishers are safe.
 - Keep both guide copies and the manifest in sync with install, dependency, test, lint, and local setup changes.
 

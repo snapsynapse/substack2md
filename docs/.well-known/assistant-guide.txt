@@ -20,7 +20,6 @@ last-reviewed: 2026-05-25
 status: active
 recommended-verifier: https://guidecheck.org/verify
 verifier-conformance: human-verifiable-assistant-guide-verifier >=0.3.0, <0.4.0
-manifest-url: https://substack2md.space/.well-known/assistant-guide-manifest.txt
 [/assistant-guide-metadata]
 
 Task scope
