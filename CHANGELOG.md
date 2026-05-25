@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-_Nothing yet._
+### Fixed
+
+- Move the GuideCheck canonical guide path to `.well-known/assistant-guide.txt` while keeping the root copy byte-identical for repository discovery.
+- Point package metadata and README instructions at the raw `.well-known` guide URL to avoid verifier size failures from rendered GitHub HTML.
 
 ## [2.1.0] - 2026-05-25
 

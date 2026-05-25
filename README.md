@@ -33,6 +33,7 @@ pip install .
 
 This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-assisted local install:
 
+- `.well-known/assistant-guide.txt`
 - `assistant-guide.txt`
 - `assistant-guide.manifest.json`
 
@@ -40,13 +41,13 @@ The guide is written for GuideCheck profile `0.3.0` and targets the highest guid
 
 Use it this way:
 
-1. Open `assistant-guide.txt` and read it in full.
+1. Open `.well-known/assistant-guide.txt` or the byte-identical root `assistant-guide.txt` copy and read it in full.
 2. Verify the guide with a conformant verifier such as https://guidecheck.org/verify.
 3. Check that the verifier reports the guide SHA-256 and no blocking findings.
 4. Confirm to your assistant that you have read the guide, understand that conformance is not safety, and approve proceeding under the reported level.
 5. Let the assistant execute only the explicit `[action]` blocks, with per-action approval where required.
 
-The sidecar manifest pins the expected guide byte count and SHA-256. The public repository copy is the independent provenance anchor once the guide commit is pushed to GitHub.
+The canonical repository path is `.well-known/assistant-guide.txt`. The root `assistant-guide.txt` copy is kept byte-identical for easier discovery from GitHub. The sidecar manifest pins the expected guide byte count and SHA-256. Use the raw text URL when verifying; a rendered GitHub page is HTML and will exceed the GuideCheck byte limit.
 
 For development work:
 

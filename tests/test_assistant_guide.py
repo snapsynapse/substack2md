@@ -3,7 +3,8 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-GUIDE = ROOT / "assistant-guide.txt"
+GUIDE = ROOT / ".well-known" / "assistant-guide.txt"
+ROOT_GUIDE = ROOT / "assistant-guide.txt"
 MANIFEST = ROOT / "assistant-guide.manifest.json"
 
 
@@ -47,6 +48,10 @@ def test_assistant_guide_byte_profile():
     assert max(len(line) for line in lines) <= 120
 
 
+def test_root_assistant_guide_copy_is_byte_identical():
+    assert ROOT_GUIDE.read_bytes() == GUIDE.read_bytes()
+
+
 def test_assistant_guide_required_metadata_and_manifest_link():
     text = GUIDE.read_text(encoding="ascii")
     metadata = _metadata(text)
@@ -71,7 +76,7 @@ def test_assistant_guide_manifest_matches_bytes():
     data = GUIDE.read_bytes()
     manifest = json.loads(MANIFEST.read_text(encoding="ascii"))
 
-    assert manifest["guide-path"] == "assistant-guide.txt"
+    assert manifest["guide-path"] == ".well-known/assistant-guide.txt"
     assert manifest["guide-bytes"] == len(data)
     assert manifest["guide-sha256"] == hashlib.sha256(data).hexdigest()
     assert manifest["profile"] == "human-verifiable-assistant-guide"

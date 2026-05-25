@@ -22,7 +22,7 @@ Thanks for your interest. A few conventions that keep the repo easy to maintain.
 
 4. If you added a new CLI flag, new frontmatter field, or changed the shape of any public function, add a test covering the new behavior.
 
-5. If you changed install, dependency, test, lint, or local setup behavior, update `assistant-guide.txt` and `assistant-guide.manifest.json` in the same PR. Then run the full test suite so `tests/test_assistant_guide.py` verifies the GuideCheck byte profile and manifest hash.
+5. If you changed install, dependency, test, lint, or local setup behavior, update `.well-known/assistant-guide.txt`, the byte-identical root `assistant-guide.txt` copy, and `assistant-guide.manifest.json` in the same PR. Then run the full test suite so `tests/test_assistant_guide.py` verifies the GuideCheck byte profile, copy identity, and manifest hash.
 
 ## PR guidelines
 

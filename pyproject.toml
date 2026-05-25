@@ -48,7 +48,7 @@ Homepage = "https://github.com/snapsynapse/substack2md"
 Repository = "https://github.com/snapsynapse/substack2md"
 Issues = "https://github.com/snapsynapse/substack2md/issues"
 Changelog = "https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md"
-Assistant-Guide = "https://raw.githubusercontent.com/snapsynapse/substack2md/main/assistant-guide.txt"
+Assistant-Guide = "https://raw.githubusercontent.com/snapsynapse/substack2md/main/.well-known/assistant-guide.txt"
 
 [project.scripts]
 substack2md = "substack2md.cli:main"
