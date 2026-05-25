@@ -38,3 +38,41 @@ def test_from_md_rejects_publication_mapping_escape(tmp_path):
         )
 
     assert not (tmp_path / "escape").exists()
+
+
+def test_process_url_rejects_publication_mapping_escape(monkeypatch, tmp_path):
+    class FakeClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def fetch_html(self, url):
+            return """
+            <html><head>
+              <title>Hello</title>
+              <meta name="author" content="A. Writer">
+            </head><body>
+              <h1>Hello</h1>
+              <article><p>Body text here with enough words for extraction
+              padding padding padding padding padding padding padding.</p>
+              </article>
+            </body></html>
+            """
+
+    monkeypatch.setattr(substack2md, "CDPClient", FakeClient)
+
+    base_dir = tmp_path / "archive"
+    out = substack2md.process_url(
+        "https://examplepub.substack.com/p/hello",
+        base_dir=base_dir,
+        pub_mappings={"examplepub": "../../escape"},
+        also_save_html=True,
+        overwrite=True,
+        cdp_host="x",
+        cdp_port=0,
+        timeout=1,
+        retries=1,
+        detect_paywall=False,
+    )
+
+    assert out is None
+    assert not (tmp_path / "escape").exists()
