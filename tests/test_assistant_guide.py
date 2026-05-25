@@ -1,13 +1,12 @@
 import hashlib
-import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 GUIDE = ROOT / ".well-known" / "assistant-guide.txt"
 ROOT_GUIDE = ROOT / "assistant-guide.txt"
 PAGES_GUIDE = ROOT / "docs" / ".well-known" / "assistant-guide.txt"
-MANIFEST = ROOT / "assistant-guide.manifest.json"
-PAGES_MANIFEST = ROOT / "docs" / "assistant-guide.manifest.json"
+MANIFEST = ROOT / "assistant-guide-manifest.txt"
+PAGES_MANIFEST = ROOT / "docs" / ".well-known" / "assistant-guide-manifest.txt"
 
 
 def _metadata(text: str) -> dict[str, str]:
@@ -17,6 +16,15 @@ def _metadata(text: str) -> dict[str, str]:
     for line in text[start:end].splitlines():
         key, value = line.split(": ", 1)
         out[key] = value
+    return out
+
+
+def _key_values(text: str) -> dict[str, str]:
+    out = {}
+    for line in text.splitlines():
+        if line:
+            key, value = line.split(": ", 1)
+            out[key] = value
     return out
 
 
@@ -74,16 +82,18 @@ def test_assistant_guide_required_metadata_and_manifest_link():
     assert metadata["profile"] == "human-verifiable-assistant-guide"
     assert metadata["profile-version"] == "0.3.0"
     assert metadata["canonical-url"] == "https://substack2md.space/.well-known/assistant-guide.txt"
-    assert metadata["manifest-url"] == "https://substack2md.space/assistant-guide.manifest.json"
+    assert metadata["manifest-url"] == (
+        "https://substack2md.space/.well-known/assistant-guide-manifest.txt"
+    )
     assert metadata["recommended-verifier"] == "https://guidecheck.org/verify"
 
 
 def test_assistant_guide_manifest_matches_bytes():
     data = GUIDE.read_bytes()
-    manifest = json.loads(MANIFEST.read_text(encoding="ascii"))
+    manifest = _key_values(MANIFEST.read_text(encoding="ascii"))
 
-    assert manifest["guide-path"] == ".well-known/assistant-guide.txt"
-    assert manifest["guide-bytes"] == len(data)
+    assert manifest["guide-path"] == "/.well-known/assistant-guide.txt"
+    assert int(manifest["guide-bytes"]) == len(data)
     assert manifest["guide-sha256"] == hashlib.sha256(data).hexdigest()
     assert manifest["profile"] == "human-verifiable-assistant-guide"
     assert manifest["profile-version"] == "0.3.0"

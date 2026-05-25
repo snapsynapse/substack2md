@@ -1,4 +1,4 @@
-Title: substack2md AI-assisted install
+Assistant Guide: substack2md AI-assisted install
 
 Before acting:
 1. Verify this guide with the recommended verifier or another conformant verifier.
@@ -20,7 +20,7 @@ last-reviewed: 2026-05-25
 status: active
 recommended-verifier: https://guidecheck.org/verify
 verifier-conformance: human-verifiable-assistant-guide-verifier >=0.3.0, <0.4.0
-manifest-url: https://substack2md.space/assistant-guide.manifest.json
+manifest-url: https://substack2md.space/.well-known/assistant-guide-manifest.txt
 [/assistant-guide-metadata]
 
 Task scope

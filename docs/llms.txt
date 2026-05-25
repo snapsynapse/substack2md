@@ -20,7 +20,7 @@ substack2md is a Python command-line tool that converts Substack posts to clean 
 - README.md — usage and configuration
 - CHANGELOG.md — version history
 - .well-known/assistant-guide.txt — GuideCheck assistant guide (profile 0.3.0, Level 4)
-- assistant-guide.manifest.json — guide integrity manifest
+- .well-known/assistant-guide-manifest.txt — guide integrity manifest
 - config.yaml.example — configuration template
 - urls.txt.example — batch URL list template
 

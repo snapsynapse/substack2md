@@ -1,9 +1,0 @@
-{
-  "guide-path": ".well-known/assistant-guide.txt",
-  "guide-version": "1.0.0",
-  "guide-sha256": "18fc3614e3cb35d4b2b084fd69e9b1bd6502f08c858a99c5b02f3657e94f23af",
-  "guide-bytes": 6151,
-  "immutable-release-url": "https://substack2md.space/.well-known/assistant-guide.txt",
-  "profile": "human-verifiable-assistant-guide",
-  "profile-version": "0.3.0"
-}

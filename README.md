@@ -36,7 +36,7 @@ This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-
 - https://substack2md.space/.well-known/assistant-guide.txt
 - `.well-known/assistant-guide.txt`
 - `assistant-guide.txt`
-- `assistant-guide.manifest.json`
+- `assistant-guide-manifest.txt`
 
 The guide is written for GuideCheck profile `0.3.0` and targets the highest guide-file conformance level, Level 4. Level 5 is not claimed here because GuideCheck reserves Level 5 for a guide plus a conformant assistant runtime.
 
