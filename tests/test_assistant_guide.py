@@ -5,7 +5,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 GUIDE = ROOT / ".well-known" / "assistant-guide.txt"
 ROOT_GUIDE = ROOT / "assistant-guide.txt"
+PAGES_GUIDE = ROOT / "docs" / ".well-known" / "assistant-guide.txt"
 MANIFEST = ROOT / "assistant-guide.manifest.json"
+PAGES_MANIFEST = ROOT / "docs" / "assistant-guide.manifest.json"
 
 
 def _metadata(text: str) -> dict[str, str]:
@@ -50,6 +52,8 @@ def test_assistant_guide_byte_profile():
 
 def test_root_assistant_guide_copy_is_byte_identical():
     assert ROOT_GUIDE.read_bytes() == GUIDE.read_bytes()
+    assert PAGES_GUIDE.read_bytes() == GUIDE.read_bytes()
+    assert PAGES_MANIFEST.read_bytes() == MANIFEST.read_bytes()
 
 
 def test_assistant_guide_required_metadata_and_manifest_link():
@@ -69,6 +73,12 @@ def test_assistant_guide_required_metadata_and_manifest_link():
     assert required <= set(metadata)
     assert metadata["profile"] == "human-verifiable-assistant-guide"
     assert metadata["profile-version"] == "0.3.0"
+    assert metadata["canonical-url"] == (
+        "https://snapsynapse.github.io/substack2md/.well-known/assistant-guide.txt"
+    )
+    assert metadata["manifest-url"] == (
+        "https://snapsynapse.github.io/substack2md/assistant-guide.manifest.json"
+    )
     assert metadata["recommended-verifier"] == "https://guidecheck.org/verify"
 
 

@@ -33,6 +33,7 @@ pip install .
 
 This repo includes a GuideCheck Human-Verifiable Assistant Guide for bounded AI-assisted local install:
 
+- https://snapsynapse.github.io/substack2md/.well-known/assistant-guide.txt
 - `.well-known/assistant-guide.txt`
 - `assistant-guide.txt`
 - `assistant-guide.manifest.json`
@@ -42,12 +43,12 @@ The guide is written for GuideCheck profile `0.3.0` and targets the highest guid
 Use it this way:
 
 1. Open `.well-known/assistant-guide.txt` or the byte-identical root `assistant-guide.txt` copy and read it in full.
-2. Verify the guide with a conformant verifier such as https://guidecheck.org/verify.
+2. Verify `https://snapsynapse.github.io/substack2md/.well-known/assistant-guide.txt` with a conformant verifier such as https://guidecheck.org/verify.
 3. Check that the verifier reports the guide SHA-256 and no blocking findings.
 4. Confirm to your assistant that you have read the guide, understand that conformance is not safety, and approve proceeding under the reported level.
 5. Let the assistant execute only the explicit `[action]` blocks, with per-action approval where required.
 
-The canonical repository path is `.well-known/assistant-guide.txt`. The root `assistant-guide.txt` copy is kept byte-identical for easier discovery from GitHub. The sidecar manifest pins the expected guide byte count and SHA-256. Use the raw text URL when verifying; a rendered GitHub page is HTML and will exceed the GuideCheck byte limit.
+The canonical served path is the GitHub Pages `.well-known` URL above. The repository path `.well-known/assistant-guide.txt`, the root `assistant-guide.txt` copy, and the Pages source copy under `docs/.well-known/assistant-guide.txt` are kept byte-identical. The sidecar manifest pins the expected guide byte count and SHA-256. Use the GitHub Pages URL when verifying; rendered GitHub file pages and `raw.githubusercontent.com` repository paths are not the standard discoverable location for this project.
 
 For development work:
 
