@@ -388,7 +388,7 @@ MIT License - see LICENSE file for details.
 
 Built with:
 - [websocket-client](https://github.com/websocket-client/websocket-client)
-- [BeautifulSoup](https://www.crummy.com/software/BeautifulSoup/)
+- [BeautifulSoup](https://crummy.com/software/BeautifulSoup/)
 - [readability-lxml](https://github.com/buriy/python-readability)
 - [markdownify](https://github.com/matthewwithanm/python-markdownify)
 

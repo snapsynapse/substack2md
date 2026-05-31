@@ -27,7 +27,7 @@ Thanks for your interest. A few conventions that keep the repo easy to maintain.
 ## PR guidelines
 
 - Keep PRs focused. One concern per PR beats one giant PR.
-- Title in [Conventional Commits](https://www.conventionalcommits.org/) style: `feat:`, `fix:`, `refactor:`, `docs:`, `ci:`, `test:`, etc.
+- Title in [Conventional Commits](https://conventionalcommits.org/) style: `feat:`, `fix:`, `refactor:`, `docs:`, `ci:`, `test:`, etc.
 - PR description should answer: what problem does this solve, what changed, how did you test it.
 - If your PR introduces network or side-effect code, flag it in the description so reviewers know to look closely.
 

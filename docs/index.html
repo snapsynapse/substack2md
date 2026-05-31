@@ -51,7 +51,7 @@
 
   <!-- Identity verification (IndieWeb rel=me) -->
   <link rel="me" href="https://github.com/snapsynapse">
-  <link rel="me" href="https://www.linkedin.com/in/samrogers">
+  <link rel="me" href="https://linkedin.com/in/samrogers">
 
   <!-- JSON-LD: SoftwareApplication -->
   <script type="application/ld+json">
@@ -64,9 +64,9 @@
     "url": "https://substack2md.space/",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "macOS, Linux, Windows",
-    "softwareVersion": "2.1.1",
+    "softwareVersion": "2.1.2",
     "datePublished": "2025-10-20",
-    "dateModified": "2026-05-24",
+    "dateModified": "2026-05-31",
     "license": "https://github.com/snapsynapse/substack2md/blob/main/LICENSE",
     "codeRepository": "https://github.com/snapsynapse/substack2md",
     "programmingLanguage": "Python",
@@ -425,9 +425,9 @@
       <span class="sep">&middot;</span>
       Published <time datetime="2025-10-20">October 20, 2025</time>
       <span class="sep">&middot;</span>
-      Updated <time datetime="2026-05-24">May 24, 2026</time>
+      Updated <time datetime="2026-05-31">May 31, 2026</time>
       <span class="sep">&middot;</span>
-      <span class="version">v2.1.1</span>
+      <span class="version">v2.1.2</span>
       <span class="sep">&middot;</span>
       <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a>
     </p>
@@ -471,7 +471,7 @@
         <tr><td>Archive your own newsletter</td><td>Walks your archive page, exports every post with paywall status preserved.</td></tr>
         <tr><td>Read newsletters offline in Obsidian</td><td>Outputs Markdown with frontmatter and wikilinks ready to drop into a vault.</td></tr>
         <tr><td>Build a personal corpus for search or LLM context</td><td>Plain Markdown, one file per post, structured filenames you can grep.</td></tr>
-        <tr><td>Stop accidentally sharing paid content</td><td>Optional paywall detection tags posts as <code>free</code> or <code>subscriber-only</code> in frontmatter.</td></tr>
+        <tr><td>Stop accidentally sharing paid content</td><td>Optional paywall detection writes <code>is_paid</code> and <code>audience</code> fields to frontmatter.</td></tr>
       </tbody>
     </table>
   </div>
@@ -497,6 +497,7 @@ pip install .</pre>
 
 # or manually
 chrome --remote-debugging-port=9222 \
+       --remote-allow-origins=http://127.0.0.1:9222 \
        --user-data-dir=/tmp/substack2md</pre>
       </div>
 
@@ -507,7 +508,7 @@ chrome --remote-debugging-port=9222 \
 
       <div class="code-block">
         <h3>Batch from a URL list</h3>
-<pre>substack2md urls.txt
+<pre>substack2md --urls-file urls.txt
 # one URL per line, blank lines and # comments OK</pre>
         <p class="annotation">See <code>urls.txt.example</code> in the repo for the expected format.</p>
       </div>
@@ -534,7 +535,8 @@ chrome --remote-debugging-port=9222 \
 <span class="y">publication:</span> example
 <span class="y">url:</span> https://example.substack.com/p/boring-infrastructure
 <span class="y">date:</span> 2025-09-14
-<span class="y">access:</span> free
+<span class="y">is_paid:</span> false
+<span class="y">audience:</span> everyone
 <span class="y">tags:</span> [substack, infrastructure]
 <span class="c">---</span>
 
@@ -554,7 +556,7 @@ mistakes, made in slightly different orders. See also:
       <strong>Canonical reference.</strong> This page is the authoritative landing for substack2md.
       Source of truth is the <a href="https://github.com/snapsynapse/substack2md" target="_blank" rel="noopener">GitHub repository</a>;
       this page tracks the latest released version. Last substantive revision:
-      <time datetime="2026-05-24">2026-05-24</time>.
+      <time datetime="2026-05-31">2026-05-31</time>.
       <a href="https://github.com/snapsynapse/substack2md/commits/main/README.md" target="_blank" rel="noopener">Revision history &rarr;</a>
     </aside>
   </div>
@@ -565,7 +567,7 @@ mistakes, made in slightly different orders. See also:
   <div class="container">
     <div class="footer-grid">
       <div class="footer-meta">
-        <p>substack2md v2.1.1 &middot; <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a></p>
+        <p>substack2md v2.1.2 &middot; <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a></p>
         <p>A <a href="https://snapsynapse.com/" target="_blank" rel="noopener">Snap Synapse</a> project by <a href="https://sam-rogers.com/" target="_blank" rel="noopener author">Sam Rogers</a>.</p>
         <p style="margin-top: 0.5rem;">See also: <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> &middot; <a href="https://gracefulboundaries.dev/" target="_blank" rel="noopener">Graceful Boundaries</a> &middot; <a href="https://knowledge-as-code.com/" target="_blank" rel="noopener">Knowledge as Code</a></p>
       </div>
