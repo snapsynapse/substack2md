@@ -23,6 +23,14 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 
 ## Installation
 
+Homebrew (macOS and Linux):
+
+```bash
+brew install snapsynapse/tap/substack2md
+```
+
+Or from source:
+
 ```bash
 git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
