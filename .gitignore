@@ -266,3 +266,7 @@ scratch.md
 
 # --- baseline additions (automated audit 2026-04-21) ---
 node_modules/
+
+# --- portfolio baseline (2026-07-04): transient dirs ---
+handoffs/
+working/
