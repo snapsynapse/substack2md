@@ -40,7 +40,10 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "responses>=0.24",
-    "ruff>=0.4.0",
+    # Pinned: ruff format output changes between minors (0.16 began formatting
+    # Python blocks inside Markdown), which flips CI red with no code change.
+    # Bump deliberately, then re-run `ruff format` and commit the result.
+    "ruff==0.16.1",
 ]
 
 [project.urls]
@@ -71,7 +74,7 @@ filterwarnings = [
 [tool.ruff]
 line-length = 100
 target-version = "py310"
-extend-exclude = [".venv", "build", "dist", ".claude"]
+extend-exclude = [".venv", "build", "dist", ".claude", "*.md"]
 
 [tool.ruff.lint]
 select = [
