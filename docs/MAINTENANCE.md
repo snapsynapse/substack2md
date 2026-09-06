@@ -6,6 +6,10 @@ This repository has a maintenance-only contribution scope. Publication status an
 
 Maintenance readiness requires reliable capture and recovery, meaningful failure exit codes, clean installation from a built wheel, and agreement between documentation and behavior. Local validation establishes readiness for review; publication and live verification remain separate steps.
 
+## Distribution decision
+
+Decision: 2026-09-05, approved by the maintainer. Do not publish this project to PyPI. Supported distribution channels are GitHub Releases (wheel and source archives) and the `snapsynapse/tap/substack2md` Homebrew formula. The PyPI name `substack2md` belongs to a different project; a renamed PyPI distribution and its publishing infrastructure are outside maintenance scope. Python dependencies may still be obtained from PyPI. Revisit only through an explicit maintainer decision.
+
 ## Release checklist
 
 1. Review the scoped diff, outstanding issues, and unprocessed handoffs. Preserve unrelated local changes. Select a version appropriate to the final change, then update `substack2md/_version.py`, `CHANGELOG.md`, and version surfaces together during authorized local preparation. Mark the release date only when publication is authorized.
