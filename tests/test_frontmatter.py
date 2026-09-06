@@ -13,7 +13,7 @@ Merge-blocking questions:
       - is_paid True  -> key present, value True
       - is_paid False -> key present, value False (False is not None,
         must survive the None-filter)
-      - is_paid None  -> key absent
+      - is_paid None  -> explicit null when supplied
 
   F3. YAML emits real booleans, not the strings "True"/"False".  Obsidian
       and downstream YAML consumers rely on this.
@@ -92,12 +92,12 @@ def test_is_paid_false_survives_none_filter():
     assert fm["audience"] == "everyone"
 
 
-def test_none_values_are_filtered():
+def test_explicit_unknown_paywall_values_are_preserved():
     fields = _base_fields(is_paid=None, audience=None)
     out = substack2md.with_frontmatter(fields, "body\n")
     fm = _parse_frontmatter(out)
-    assert "is_paid" not in fm
-    assert "audience" not in fm
+    assert "is_paid" in fm and fm["is_paid"] is None
+    assert "audience" in fm and fm["audience"] is None
 
 
 # --- F3: YAML bool not string ---------------------------------------------

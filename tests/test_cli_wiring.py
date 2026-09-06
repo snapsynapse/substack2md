@@ -42,6 +42,7 @@ def test_cli_accepts_detect_paywall(monkeypatch, tmp_path):
         timeout,
         retries,
         detect_paywall=False,
+        **kwargs,
     ):
         called["detect_paywall"] = detect_paywall
         return None
@@ -76,6 +77,7 @@ def test_cli_default_is_false(monkeypatch, tmp_path):
         timeout,
         retries,
         detect_paywall=False,
+        **kwargs,
     ):
         called["detect_paywall"] = detect_paywall
         return None
@@ -269,9 +271,9 @@ def test_api_failure_still_writes_file(monkeypatch, tmp_path, fake_cdp):
     )
     assert out is not None and Path(out).exists()
     text = Path(out).read_text()
-    # None-valued keys should be filtered out of frontmatter
-    assert "is_paid" not in text
-    assert "audience" not in text
+    # Requested detection remains distinguishable from disabled detection.
+    assert "is_paid: null" in text
+    assert "audience: null" in text
 
 
 # --- C5: --from-md path unchanged -----------------------------------------

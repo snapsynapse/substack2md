@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-  <title>substack2md &mdash; Substack posts to clean Markdown</title>
+  <title>substack2md : Substack posts to clean Markdown</title>
   <meta name="description" content="Bulk-export Substack posts as Obsidian-friendly Markdown via your authenticated browser session. YAML frontmatter, wikilinks, paywall tagging.">
   <meta name="keywords" content="substack export, substack to markdown, substack scraper, obsidian import, bulk export substack, substack backup, CDP, chrome devtools protocol, markdown converter, substack archive">
   <meta name="author" content="Sam Rogers">
@@ -18,6 +18,7 @@
   <link rel="manifest" href="/site.webmanifest">
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="alternate" type="text/plain" href="https://substack2md.space/llms.txt" title="LLM-readable summary">
+  <link rel="alternate" type="text/plain" href="/.well-known/assistant-guide.txt" title="Human-verifiable assistant guide">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -25,13 +26,13 @@
   <meta property="og:title" content="substack2md">
   <meta property="og:description" content="Substack posts to clean, Obsidian-friendly Markdown. Browser-session auth, no passwords.">
   <meta property="og:image" content="https://substack2md.space/imgs/og.png">
-  <meta property="og:image:alt" content="substack2md &mdash; Substack posts to clean Markdown">
+  <meta property="og:image:alt" content="substack2md : Substack posts to clean Markdown">
   <meta property="og:image:width" content="1280">
   <meta property="og:image:height" content="640">
   <meta property="og:url" content="https://substack2md.space/">
   <meta property="og:locale" content="en_US">
   <meta property="article:published_time" content="2025-10-20T00:00:00Z">
-  <meta property="article:modified_time" content="2026-05-24T00:00:00Z">
+  <meta property="article:modified_time" content="2026-09-05T00:00:00Z">
   <meta property="article:author" content="Sam Rogers">
   <meta property="article:publisher" content="https://snapsynapse.com/">
   <meta property="article:section" content="Tools">
@@ -64,9 +65,9 @@
     "url": "https://substack2md.space/",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "macOS, Linux, Windows",
-    "softwareVersion": "2.1.2",
+    "softwareVersion": "2.2.0",
     "datePublished": "2025-10-20",
-    "dateModified": "2026-05-31",
+    "dateModified": "2026-09-05",
     "license": "https://github.com/snapsynapse/substack2md/blob/main/LICENSE",
     "codeRepository": "https://github.com/snapsynapse/substack2md",
     "programmingLanguage": "Python",
@@ -419,19 +420,19 @@
 <section class="hero">
   <div class="container">
     <h1>Substack to clean Markdown.</h1>
-    <p class="subtitle">Bulk-export Substack posts as Obsidian-friendly Markdown using your authenticated browser session &mdash; no passwords, no copy-paste.</p>
+    <p class="subtitle">Bulk-export Substack posts as Obsidian-friendly Markdown using your authenticated browser session : no passwords, no copy-paste.</p>
     <p class="byline">
       By <a href="https://sam-rogers.com/" target="_blank" rel="noopener author">Sam Rogers</a>, <a href="https://snapsynapse.com/" target="_blank" rel="noopener">Snap Synapse</a>
       <span class="sep">&middot;</span>
       Published <time datetime="2025-10-20">October 20, 2025</time>
       <span class="sep">&middot;</span>
-      Updated <time datetime="2026-05-31">May 31, 2026</time>
+      Updated <time datetime="2026-09-05">September 5, 2026</time>
       <span class="sep">&middot;</span>
-      <span class="version">v2.1.2</span>
+      <span class="version">v2.2.0</span>
       <span class="sep">&middot;</span>
       <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a>
     </p>
-    <p class="hook">Substack does not let you bulk-export your reading list or subscriptions in any useful format. substack2md uses your logged-in browser via the Chrome DevTools Protocol to convert posts to clean Markdown with YAML frontmatter, image-and-embed-as-link rewriting, and <code>[[YYYY-MM-DD-slug]]</code> wikilinks for Obsidian.</p>
+    <p class="hook">Substack does not let you bulk-export your reading list or subscriptions in any useful format. substack2md uses your logged-in browser via the Chrome DevTools Protocol to convert posts to clean Markdown with YAML frontmatter, image-and-embed-as-link rewriting, and <code>[[Publication/YYYY-MM-DD-slug|Original label]]</code> wikilinks for Obsidian.</p>
 
     <img class="hero-img" src="/imgs/og.png" width="1280" height="640" alt="substack2md banner: Substack posts converted to Obsidian-friendly Markdown with frontmatter and wikilinks">
 
@@ -445,20 +446,20 @@
 <section class="alt" id="features">
   <div class="container">
     <h2>What it does</h2>
-    <p>Run substack2md against a single post URL or a text file of URLs. It opens a Chrome tab against your local browser, reads the rendered post HTML, and writes Markdown to disk organized by publication. Your Substack session cookie never leaves your machine, and no Substack credentials are ever handled by the tool.</p>
+    <p>Run substack2md against a single post URL or a text file of URLs. It opens a Chrome tab against your local browser, reads the rendered post HTML, and writes Markdown to disk organized by publication. The tool does not read or export session cookies. Your browser authenticates its normal requests to Substack.</p>
 
     <div class="pillars">
       <div class="pillar">
         <h3>Browser-session auth</h3>
-        <p>Uses your existing Chrome via the Chrome DevTools Protocol. No passwords stored, no Substack credentials handled by the tool.</p>
+        <p>Uses an isolated Chrome or Brave profile via the Chrome DevTools Protocol. No passwords stored, no Substack credentials handled by the tool.</p>
       </div>
       <div class="pillar">
         <h3>Obsidian-friendly output</h3>
-        <p>YAML frontmatter, <code>[[YYYY-MM-DD-slug]]</code> wikilinks for cross-references, images and embeds rewritten as plain links so your vault stays portable.</p>
+        <p>YAML frontmatter, <code>[[Publication/YYYY-MM-DD-slug|Original label]]</code> wikilinks for cross-references, images and embeds rewritten as plain links so your vault stays portable.</p>
       </div>
       <div class="pillar">
         <h3>Polite and configurable</h3>
-        <p>Sequential requests with configurable sleep, publication-slug-to-folder mapping, transcript cleaning, and optional paywall tagging via Substack's public API.</p>
+        <p>Sequential by default, with optional parallel workers across publications. Configurable delays, publication folders, transcript cleanup, and optional paywall metadata.</p>
       </div>
     </div>
 
@@ -468,8 +469,8 @@
         <tr><th>You want to</th><th>substack2md does</th></tr>
       </thead>
       <tbody>
-        <tr><td>Archive your own newsletter</td><td>Walks your archive page, exports every post with paywall status preserved.</td></tr>
-        <tr><td>Read newsletters offline in Obsidian</td><td>Outputs Markdown with frontmatter and wikilinks ready to drop into a vault.</td></tr>
+        <tr><td>Archive your own newsletter</td><td>Converts the post URLs you supply, individually or in a text file. Paywall metadata is opt-in.</td></tr>
+        <tr><td>Read newsletters offline in Obsidian</td><td>Saves article text with frontmatter and wikilinks. Linked images and embeds still require network access.</td></tr>
         <tr><td>Build a personal corpus for search or LLM context</td><td>Plain Markdown, one file per post, structured filenames you can grep.</td></tr>
         <tr><td>Stop accidentally sharing paid content</td><td>Optional paywall detection writes <code>is_paid</code> and <code>audience</code> fields to frontmatter.</td></tr>
       </tbody>
@@ -482,44 +483,51 @@
     <h2>Install</h2>
     <p>Requires Python 3.10+ and a Chrome / Chromium browser. Start Chrome with the remote debugging port, log in to Substack, then run substack2md.</p>
 
+    <p>Homebrew on macOS or Linux:</p>
+    <p>Literal</p>
+    <pre>brew install snapsynapse/tap/substack2md</pre>
     <div class="code-grid">
       <div class="code-block">
-        <h3>Install</h3>
+        <h3>Install from source (macOS/Linux)</h3>
+<p>Literal</p>
 <pre>git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
-pip install .</pre>
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install .</pre>
       </div>
 
       <div class="code-block">
-        <h3>Start Chrome with CDP</h3>
-<pre># macOS
-./launch-browser.sh
-
-# or manually
-chrome --remote-debugging-port=9222 \
-       --remote-allow-origins=http://127.0.0.1:9222 \
-       --user-data-dir=/tmp/substack2md</pre>
+        <h3>Start the browser from a source checkout</h3>
+<p>On macOS, run the helper in the cloned repository, then log in to Substack in the browser it opens.</p>
+<p>Literal</p>
+<pre>./launch-browser.sh</pre>
+<p>For manual commands and other platforms, see the <a href="https://github.com/snapsynapse/substack2md#quick-start">Quick Start</a>.</p>
       </div>
 
       <div class="code-block">
         <h3>Convert a single post</h3>
-<pre>substack2md https://example.substack.com/p/some-post</pre>
+<p>Replace: POST_URL -&gt; the full HTTPS URL of your Substack post.</p>
+<p>Customize</p>
+<pre>substack2md POST_URL</pre>
       </div>
 
       <div class="code-block">
         <h3>Batch from a URL list</h3>
-<pre>substack2md --urls-file urls.txt
-# one URL per line, blank lines and # comments OK</pre>
+<p>Replace: URLS_FILE -&gt; the path to your text file of post URLs. Quote paths containing spaces.</p>
+<p>Customize</p>
+<pre>substack2md --urls-file URLS_FILE</pre>
         <p class="annotation">See <code>urls.txt.example</code> in the repo for the expected format.</p>
       </div>
     </div>
 
+    <p>This page documents version 2.2.0: reliable capture recovery, explicit failure outcomes, and a maintenance-only contribution scope. Check <a href="https://github.com/snapsynapse/substack2md/releases">GitHub Releases</a> for published artifacts. See the <a href="https://github.com/snapsynapse/substack2md/blob/main/docs/MAINTENANCE.md">maintenance policy and release checks</a>; source changes do not imply a published release.</p>
     <h3 style="margin-top: 2rem;">AI-assisted install</h3>
-    <p>substack2md ships a <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> human-verifiable assistant guide (profile <code>0.3.0</code>) that currently verifies at Level 3, so an AI assistant can install and run it locally under explicit human approval. Verify the guide with a conformant verifier before letting the assistant execute any <code>[action]</code> block.</p>
+    <p>substack2md ships a <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> human-verifiable assistant guide (profile <code>0.3.0</code>) for bounded local installation under explicit human approval. Verify the exact guide with a conformant verifier and match its SHA-256 to the local copy before letting the assistant execute an <code>[action]</code> block. Copy/hash tests alone do not establish a hosted conformance level.</p>
     <ul style="list-style: none; padding-left: 0;">
       <li>&middot; Canonical: <a href="https://substack2md.space/.well-known/assistant-guide.txt"><code>https://substack2md.space/.well-known/assistant-guide.txt</code></a></li>
       <li>&middot; Repo path: <code>.well-known/assistant-guide.txt</code></li>
-      <li>&middot; Manifest: <code>.well-known/assistant-guide-manifest.txt</code></li>
+      <li>&middot; Manifest: <a href="/.well-known/assistant-guide-manifest.txt">served integrity manifest</a> (repository source: <code>assistant-guide-manifest.txt</code>)</li>
     </ul>
   </div>
 </section>
@@ -528,13 +536,13 @@ chrome --remote-debugging-port=9222 \
   <div class="container">
     <div class="demo-block">
       <h2>Output shape</h2>
-      <p>Each post becomes a single Markdown file with YAML frontmatter Obsidian and most static-site generators can read directly.</p>
+      <p>Each post becomes a Markdown file with YAML frontmatter Obsidian and most static-site generators can read directly. This example includes optional paywall metadata from --detect-paywall.</p>
       <div class="demo-preview"><span class="c">---</span>
 <span class="y">title:</span> The case for boring infrastructure
 <span class="y">author:</span> A. Writer
 <span class="y">publication:</span> example
 <span class="y">url:</span> https://example.substack.com/p/boring-infrastructure
-<span class="y">date:</span> 2025-09-14
+<span class="y">published:</span> 2025-09-14
 <span class="y">is_paid:</span> false
 <span class="y">audience:</span> everyone
 <span class="y">tags:</span> [substack, infrastructure]
@@ -544,7 +552,7 @@ chrome --remote-debugging-port=9222 \
 
 Most outages are not exotic. They are the same five
 mistakes, made in slightly different orders. See also:
-[[2025-08-02-the-five-mistakes]].
+[[Example/2025-08-02-the-five-mistakes|The five mistakes]].
 </div>
       <div class="cta-row">
         <a href="https://github.com/snapsynapse/substack2md" class="btn btn-primary" target="_blank" rel="noopener">View on GitHub &rarr;</a>
@@ -555,8 +563,8 @@ mistakes, made in slightly different orders. See also:
     <aside class="canonical-note" role="note">
       <strong>Canonical reference.</strong> This page is the authoritative landing for substack2md.
       Source of truth is the <a href="https://github.com/snapsynapse/substack2md" target="_blank" rel="noopener">GitHub repository</a>;
-      this page tracks the latest released version. Last substantive revision:
-      <time datetime="2026-05-31">2026-05-31</time>.
+      this page describes the version shown above; publication status is recorded in GitHub Releases. Last substantive revision:
+      <time datetime="2026-09-05">2026-09-05</time>.
       <a href="https://github.com/snapsynapse/substack2md/commits/main/README.md" target="_blank" rel="noopener">Revision history &rarr;</a>
     </aside>
   </div>
@@ -567,7 +575,7 @@ mistakes, made in slightly different orders. See also:
   <div class="container">
     <div class="footer-grid">
       <div class="footer-meta">
-        <p>substack2md v2.1.2 &middot; <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a></p>
+        <p>substack2md v2.2.0 &middot; <a href="https://github.com/snapsynapse/substack2md/blob/main/LICENSE" rel="license" target="_blank">MIT</a></p>
         <p>A <a href="https://snapsynapse.com/" target="_blank" rel="noopener">Snap Synapse</a> project by <a href="https://sam-rogers.com/" target="_blank" rel="noopener author">Sam Rogers</a>.</p>
         <p style="margin-top: 0.5rem;">See also: <a href="https://guidecheck.org/" target="_blank" rel="noopener">GuideCheck</a> &middot; <a href="https://gracefulboundaries.dev/" target="_blank" rel="noopener">Graceful Boundaries</a> &middot; <a href="https://knowledge-as-code.com/" target="_blank" rel="noopener">Knowledge as Code</a></p>
       </div>

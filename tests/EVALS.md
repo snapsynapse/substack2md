@@ -1,31 +1,20 @@
-# PR #1 Eval Report — `feat: --detect-paywall`
+# PR #1 Eval Report - `feat: --detect-paywall`
 
 Target: https://github.com/snapsynapse/substack2md/pull/1
 Source branch: drewid74:feat/paywall-detection
 Base: snapsynapse:main
 
-## How to run
+## Historical status
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+This is the original evaluation of PR #1, not a current release assessment. Its merge blockers were addressed through [PR #2](https://github.com/snapsynapse/substack2md/pull/2). Results, test names, and proposed changes below describe the code reviewed at that time and may differ from the current package.
 
-# Fetch PR code into a local checkout
-git remote add drew https://github.com/drewid74/substack2md.git
-git fetch drew feat/paywall-detection
-git checkout drew/feat/paywall-detection -- substack2md.py
-
-pytest tests/ -v
-# Optional live:
-SUBSTACK2MD_LIVE=1 pytest tests/test_live_smoke.py -v -s
-```
+The obsolete checkout instructions for the removed `substack2md.py` script have been removed. Use [CONTRIBUTING.md](../CONTRIBUTING.md) for current setup and tests. The decision matrix below is preserved as historical review context, not pending action.
 
 ## Result against PR HEAD
 
 28 passed, 2 failed, 1 skipped (live smoke, opt-in).
 
-## Failures — merge-blockers to discuss with author
+## Historical failures resolved before integration
 
 ### BUG 1. Founding-tier posts misclassified as free
 
@@ -34,7 +23,7 @@ SUBSTACK2MD_LIVE=1 pytest tests/test_live_smoke.py -v -s
 Substack audience values observed in the wild:
 `everyone`, `only_free`, `only_paid`, `founding`.
 
-Current code:
+Code in the reviewed PR:
 ```python
 result["is_paid"] = data.get("audience") == "only_paid"
 ```
@@ -52,7 +41,7 @@ result["is_paid"] = data.get("audience") in PAID_AUDIENCES
 
 `test_missing_audience_key_should_return_unknown` FAILS.
 
-Current code:
+Code in the reviewed PR:
 ```python
 result["is_paid"]  = data.get("audience") == "only_paid"  # -> False when missing
 result["audience"] = data.get("audience", "everyone")     # -> "everyone" when missing
@@ -73,7 +62,7 @@ result["is_paid"]  = audience in PAID_AUDIENCES
 
 ## Non-blocking observations (flag, don't block)
 
-- Hardcoded 10s timeout — `--timeout` CLI arg is not threaded through
+- Hardcoded 10s timeout - `--timeout` CLI arg is not threaded through
   to `fetch_paywall_status`. On a large batch a slow endpoint can add
   10s per URL. `test_timeout_is_finite` currently passes at 10s; bump
   the assertion upper bound or plumb the arg before merge if the
@@ -82,7 +71,7 @@ result["is_paid"]  = audience in PAID_AUDIENCES
   is derived from the netloc, so the metadata API URL built from it
   will 404 for custom domains. Fails gracefully (is_paid=None) but the
   feature is silently inert for these. See
-  `test_custom_domain_publication_is_wrong_for_api` — documents current
+  `test_custom_domain_publication_is_wrong_for_api` - documents current
   behavior, passes by design.
 - `--from-md` path does not support paywall detection. Opt-in and
   explicitly scoped; fine. Pinned by

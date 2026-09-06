@@ -2,27 +2,36 @@
 
 Substack posts to clean, Obsidian-friendly Markdown.
 
-substack2md is a Python command-line tool that converts Substack posts to clean Markdown using your authenticated Chrome browser session via the Chrome DevTools Protocol (CDP). It produces YAML frontmatter, [[YYYY-MM-DD-slug]] wikilinks for cross-references, and rewrites images and embeds as plain links so the output is portable across Obsidian, static site generators, and plain text editors. Optional paywall detection tags posts as free or subscriber-only via Substack's public API.
+substack2md is a Python command-line tool that converts Substack posts to clean Markdown using your authenticated Chrome browser session via the Chrome DevTools Protocol (CDP). It produces YAML frontmatter, [[Publication/YYYY-MM-DD-slug|Original label]] wikilinks for cross-references, and rewrites images and embeds as plain links so the output is portable across Obsidian, static site generators, and plain text editors. Optional paywall detection tags posts as free or subscriber-only via Substack's public API.
 
 ## Key concepts
 
-- Browser-session auth via Chrome DevTools Protocol — no passwords, no credentials handled by the tool
-- YAML frontmatter on every post (title, author, publication, url, date, access, tags)
-- Obsidian wikilinks ([[YYYY-MM-DD-slug]]) for internal cross-references
-- Sequential batch processing with configurable sleep between requests
+- Browser-session auth via Chrome DevTools Protocol - the tool does not read passwords or export browser cookies
+- YAML frontmatter on every post (title, author, publication, url, published, updated, retrieved, tags)
+- Obsidian wikilinks ([[Publication/YYYY-MM-DD-slug|Original label]]) for internal cross-references
+- Sequential batches by default; optional parallel workers across publications with per-host serialization and configurable delays
 - Publication slug to folder name mapping for organized output
 - Transcript cleaning (strips timestamps and speaker labels from podcast transcripts)
 - Paywall detection via Substack's public API, opt-in
 - Ships with a GuideCheck human-verifiable assistant guide for AI-assisted local install
 
-## Key files
+This summary describes version 2.2.0. Contribution scope is maintenance-only: correctness, security, compatibility, and documentation. The tool converts supplied post URLs or existing Markdown; it does not crawl publication archives, support other publishing platforms, or export additional formats. Check GitHub Releases for published artifacts; documentation and local package versions do not establish publication.
 
-- README.md — usage and configuration
-- CHANGELOG.md — version history
-- .well-known/assistant-guide.txt — GuideCheck assistant guide (profile 0.3.0, currently verifies at Level 3)
-- .well-known/assistant-guide-manifest.txt — guide integrity manifest
-- config.yaml.example — configuration template
-- urls.txt.example — batch URL list template
+Version 2.2.0 uses output-aware resume records, overwrite bypasses resume, interrupted artifact pairs are recovered on rerun, and CLI failures return nonzero with written/skipped/failed counts. New JSON-line state records coexist with legacy URL-only records.
+
+When paywall detection is requested, unknown is_paid and audience are explicit YAML nulls. Without detection, those fields are omitted. Metadata and capture heuristics cannot prove article completeness. Images and embeds remain external links; only the saved text is available offline.
+
+## Documentation and agent entry points
+
+- [README: installation and CLI reference](https://github.com/snapsynapse/substack2md/blob/main/README.md)
+- [Changelog](https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md)
+- [Maintenance scope and release procedure](https://github.com/snapsynapse/substack2md/blob/main/docs/MAINTENANCE.md)
+- [Security and browser setup boundaries](https://github.com/snapsynapse/substack2md/blob/main/SECURITY.md)
+- [Assistant guide](https://substack2md.space/.well-known/assistant-guide.txt): profile 0.3.0. Verify the exact bytes and match the local SHA-256 before acting; no current hosted conformance level is asserted here.
+- [Guide integrity manifest](https://substack2md.space/.well-known/assistant-guide-manifest.txt)
+- [Configuration example](https://github.com/snapsynapse/substack2md/blob/main/config.yaml.example)
+- [URL-list example](https://github.com/snapsynapse/substack2md/blob/main/urls.txt.example)
+- [Published releases](https://github.com/snapsynapse/substack2md/releases)
 
 ## Links
 

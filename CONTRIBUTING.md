@@ -1,62 +1,44 @@
 # Contributing to substack2md
 
-Thanks for your interest. A few conventions that keep the repo easy to maintain.
+This is a small personal archival tool with a maintenance-only contribution scope. Contributions should address correctness, security, dependency or browser compatibility, regression coverage, or documentation. New platforms, formats, and UI features are outside the current scope. See [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 
-## Before you open a PR
+## Local checks
 
-1. Install in editable mode with dev extras and run the test suite locally:
-   ```bash
-   python -m venv .venv && source .venv/bin/activate
-   pip install -e ".[dev]"
-   pytest tests/ -v
-   ```
-   Expect 50+ passed, 1 skipped (the live smoke test is opt-in via `SUBSTACK2MD_LIVE=1`).
+Create and activate an isolated environment, then install the development dependencies declared in `pyproject.toml`. Use its pinned Ruff version, which is also used in CI.
+Literal
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+python -m pytest tests/ -v --tb=short
+python -m ruff check substack2md tests scripts
+python -m ruff format --check substack2md tests scripts
+git diff --check
+```
+The offline suite must pass without a browser or credentials. The live API check is opt-in; the exact test count changes as regressions are added.
 
-2. Before pushing, run the linter the way CI does:
-   ```bash
-   ruff check substack2md tests
-   ruff format --check substack2md tests
-   ```
-
-3. If you changed behavior that users see, update `README.md` and `CHANGELOG.md` in the same PR.
-
-4. If you added a new CLI flag, new frontmatter field, or changed the shape of any public function, add a test covering the new behavior.
-
-5. If you changed install, dependency, test, lint, or local setup behavior, update `.well-known/assistant-guide.txt`, the byte-identical root `assistant-guide.txt` copy, the Pages source copy at `docs/.well-known/assistant-guide.txt`, and both `assistant-guide-manifest.txt` copies in the same PR. Then run the full test suite so `tests/test_assistant_guide.py` verifies the GuideCheck byte profile, copy identity, and manifest hash.
-
+The following command contacts Substack's public API. An unavailable endpoint must be distinguished from verified API compatibility; a skipped test is not live verification.
+Literal
+```bash
+SUBSTACK2MD_LIVE=1 python -m pytest tests/test_live_smoke.py -v -s
+```
 ## PR guidelines
 
-- Keep PRs focused. One concern per PR beats one giant PR.
-- Title in [Conventional Commits](https://conventionalcommits.org/) style: `feat:`, `fix:`, `refactor:`, `docs:`, `ci:`, `test:`, etc.
-- PR description should answer: what problem does this solve, what changed, how did you test it.
-- If your PR introduces network or side-effect code, flag it in the description so reviewers know to look closely.
+- Keep changes focused and include the problem, resulting behavior, and validation in the description.
+- Use [Conventional Commits](https://conventionalcommits.org/) titles such as `fix:`, `docs:`, `ci:`, or `test:`.
+- Update `README.md` and `CHANGELOG.md` when behavior changes. Keep website and machine-readable descriptions accurate, and identify unreleased behavior explicitly.
+- Cover externally visible behavior with meaningful tests. Use synthetic or suitably licensed public HTML fixtures and mocked HTTP/CDP responses for deterministic regression coverage.
+- Identify network access and side effects in the PR description. Do not include private URLs, cookies, or captured subscriber content in fixtures or logs.
+- If install, dependency, test, lint, or local setup instructions change, update `.well-known/assistant-guide.txt`, `assistant-guide.txt`, and `docs/.well-known/assistant-guide.txt` together. Regenerate the root and Pages guide manifests, then run `tests/test_assistant_guide.py`.
+- Follow the signing and publication gates in [docs/MAINTENANCE.md](docs/MAINTENANCE.md). Historical public tags are not rewritten merely to add signatures.
 
 ## Style
 
-- Follow existing code style. Indent is 4 spaces.
-- Type hints on new function signatures are encouraged but not strictly required yet.
-- Use the `logging` module for diagnostics. The module-level `log` object in `substack2md._core` is the shared logger; reserve `print()` for boot-time errors that happen before logging is configured.
-- Run `ruff check` and `ruff format` before pushing; CI enforces both.
-- No em dashes in user-facing strings (markdown output, CLI help, README, docs).
-
-## Tests
-
-Tests live in `tests/`. The suite uses `pytest` plus the [`responses`](https://github.com/getsentry/responses) library for HTTP mocking. A Chrome/Brave CDP session is **not** required to run tests; CDP is stubbed out in the CLI wiring tests.
-
-To run just the unit tests:
-```bash
-pytest tests/ -v
-```
-
-To run the optional live smoke test (hits Substack's real API):
-```bash
-SUBSTACK2MD_LIVE=1 pytest tests/test_live_smoke.py -v -s
-```
+- Use four-space indentation and the configured Ruff formatting.
+- Add type hints where they clarify public interfaces and outcomes.
+- Use `logging` for diagnostics. Reserve direct console output for intentional CLI summaries and boot-time errors.
+- Avoid em dashes in generated Markdown, CLI help, and documentation.
 
 ## Code of conduct
 
-Be kind. Assume good faith. This is a small personal-archival tool; the bar is functionality, not ceremony.
-
-## Where to start
-
-Check the issues list for ideas, or look at the `## Contributing` section of the README for areas that could use help. Small docs fixes, edge-case test additions, and platform-specific troubleshooting notes are always welcome.
+Be kind and assume good faith. Small documentation corrections, reproducible bug reports, and platform compatibility evidence are welcome.

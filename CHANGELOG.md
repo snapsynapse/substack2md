@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-09-05
+
+### Fixed
+
+- Preserve inline transcript speech, functional external URLs, and link labels; keep transcript and link cleanup out of fenced code.
+- Derive the post slug from the final nonempty URL path segment.
+- Reject empty and recognizable login/error captures, navigation failures, load timeouts, and failed HTML evaluation before recording completion.
+- Buffer CDP events by session, discard pre-navigation load events, bound capture waits, and close connections after each attempt.
+- Let `--overwrite` bypass resume and recover missing output files and requested HTML sidecars.
+- Stage artifact writes and use atomic replacement with a pending marker so interrupted Markdown/HTML pairs are retried.
+- Return nonzero CLI status on capture failures, with written/skipped/failed totals; cancel queued work on interruption.
+- Validate configuration and numeric options, reject unsafe output/state symlinks, and ignore archive-index paths outside the output root.
+
+### Changed
+
+- Use SPDX license metadata and an explicit source manifest so packages retain required documentation, guide copies, and regression fixtures.
+
+- Explicitly requested paywall detection retains unknown `is_paid` and `audience` as YAML null; disabled detection still omits those fields.
+- New completion records associate URLs with relative output paths in JSON lines; legacy URL-only records remain readable.
+- Reuse the archive index within a batch and use publication-relative paths plus labels for generated wikilinks.
+- Preserve default library `Path`/`None` results while offering detailed pipeline outcomes through `detailed=True`.
+- Establish maintenance-only contribution scope and reconcile README, website, assistant guides, examples, and historical PR evaluation.
+
+### Tests
+
+- Add synthetic extraction fixtures and regressions for transcript/link preservation, CDP message ordering/errors, write recovery, resume, exit codes, and host concurrency/interruption.
+- Build and smoke-test a wheel outside the checkout in each CI Python job; check console/module versions, failure exits, imports, and Markdown conversion.
+- Make the optional live API check fail on unavailable or unrecognized responses and replace its retired post fixture.
+
 ## [2.1.2] - 2026-05-25
 
 ### Fixed
@@ -95,7 +124,8 @@ Major release. Restructures the project from a single-file script into an instal
 
 First tagged reference point. CDP-driven Substack-to-markdown converter with Obsidian wikilink rewriting, publication mapping, transcript cleanup, and batch URL file support.
 
-[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.1.2...HEAD
+[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/snapsynapse/substack2md/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/snapsynapse/substack2md/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/snapsynapse/substack2md/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/snapsynapse/substack2md/compare/v2.0.0...v2.1.0

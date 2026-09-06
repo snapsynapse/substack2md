@@ -7,14 +7,17 @@ as the ``substack2md`` console script in pyproject.toml.
 
 import argparse
 import datetime as dt
+import json
 import logging
 import os
 import re
 import sys
+import tempfile
 import threading
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from pathlib import Path
 
 # Functions that tests monkeypatch must be looked up on the package
@@ -38,7 +41,7 @@ from ._core import (
     rewrite_internal_links,
     sanitize_filename,
     scrub_transcript_lines,
-    slugify,
+    url_slug,
     with_frontmatter,
 )
 
@@ -49,6 +52,69 @@ def _substack2md():
     import substack2md
 
     return substack2md
+
+
+@dataclass(frozen=True)
+class ConversionResult:
+    """Detailed pipeline outcome; legacy callers still receive Path or None."""
+
+    status: str
+    path: Path | None = None
+    error: str | None = None
+
+
+def _pending_path(note: Path) -> Path:
+    return note.with_name(f".{note.name}.pending")
+
+
+def _write_artifacts(artifacts: dict[Path, str]) -> None:
+    """Stage writes and leave a recovery marker until all replacements succeed.
+
+    Each replacement is atomic. The marker makes an interrupted multi-file
+    capture retryable, including when old files already exist at both paths.
+    """
+    staged = []
+    note = next(reversed(artifacts)).with_suffix(".md")
+    marker = _pending_path(note)
+    try:
+        for path, content in artifacts.items():
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                dir=path.parent,
+                prefix=f".{path.name}.",
+                suffix=".tmp",
+                delete=False,
+            ) as handle:
+                temporary = Path(handle.name)
+                staged.append((temporary, path))
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+        # Replace the marker rather than following a preexisting symlink.
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=note.parent,
+            prefix=f".{note.name}.marker.",
+            delete=False,
+        ) as handle:
+            marker_temp = Path(handle.name)
+            staged.append((marker_temp, marker))
+            json.dump([path.name for path in artifacts], handle)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(marker_temp, marker)
+        for temporary, path in staged[:-1]:
+            os.replace(temporary, path)
+        marker.unlink()
+    finally:
+        for temporary, _ in staged:
+            temporary.unlink(missing_ok=True)
+
+
+def _legacy_result(result: ConversionResult, detailed: bool):
+    return result if detailed else (result.path if result.status == "written" else None)
 
 
 def process_url(
@@ -62,11 +128,14 @@ def process_url(
     timeout: int,
     retries: int,
     detect_paywall: bool = False,
-) -> Path | None:
+    *,
+    detailed: bool = False,
+    url_map: dict[str, Path] | None = None,
+) -> Path | None | ConversionResult:
     pkg = _substack2md()
-    client = pkg.CDPClient(cdp_host, cdp_port, timeout=timeout)
     last_err = None
     for attempt in range(1, retries + 1):
+        client = pkg.CDPClient(cdp_host, cdp_port, timeout=timeout)
         try:
             html = client.fetch_html(url)
             fields, body_md = pkg.extract_article_fields(url, html)
@@ -108,27 +177,56 @@ def process_url(
             ensure_dir(target_dir)
             fname = f"{fields['published']}-{fields['slug']}.md"
             out_path = target_dir / sanitize_filename(fname)
-            if out_path.exists() and not overwrite:
+            if out_path.is_symlink() or (out_path.exists() and not out_path.is_file()):
+                raise UnsafeOutputPathError(f"output is not a regular archive file: {out_path}")
+            pending = _pending_path(out_path)
+            if pending.is_symlink():
+                raise UnsafeOutputPathError(f"recovery marker is a symlink: {pending}")
+            recovering = pending.exists()
+            if recovering:
+                try:
+                    requested = json.loads(pending.read_text(encoding="utf-8"))
+                    also_save_html = (
+                        also_save_html or out_path.with_suffix(".html").name in requested
+                    )
+                except (OSError, ValueError, TypeError):
+                    # A damaged marker is incomplete work, never successful state.
+                    also_save_html = True
+            if out_path.exists() and not overwrite and not recovering:
+                sidecar = out_path.with_suffix(".html")
+                if also_save_html and not sidecar.is_file():
+                    _write_artifacts({sidecar: html})
+                    return _legacy_result(ConversionResult("written", out_path), detailed)
                 log.info("skip: exists %s", out_path)
-                return None
-            url_map = build_url_to_note_map(base_dir)
-            body_md, internal, external = rewrite_internal_links(body_md, url_map)
+                return _legacy_result(ConversionResult("skipped", out_path), detailed)
+            index = build_url_to_note_map(base_dir) if url_map is None else url_map
+            body_md, internal, external = rewrite_internal_links(body_md, index, base_dir=base_dir)
             fields["links_internal"] = internal
             fields["links_external"] = external
             md_full = with_frontmatter(fields, body_md)
-            out_path.write_text(md_full, encoding="utf-8")
-            log.info("ok: %s -> %s", url, out_path)
+            artifacts = {}
             if also_save_html:
-                out_path.with_suffix(".html").write_text(html, encoding="utf-8")
-            return out_path
+                artifacts[out_path.with_suffix(".html")] = html
+            artifacts[out_path] = md_full
+            _write_artifacts(artifacts)
+            log.info("ok: %s -> %s", url, out_path)
+            return _legacy_result(ConversionResult("written", out_path), detailed)
         except UnsafeOutputPathError as e:
             log.error("fail: %s (%s)", url, e)
-            return None
+            return _legacy_result(ConversionResult("failed", error=str(e)), detailed)
         except Exception as e:
             last_err = e
-            time.sleep(0.6 * attempt)  # simple backoff
+            if attempt < retries:
+                time.sleep(0.6 * attempt)
+        finally:
+            close = getattr(client, "close", None)
+            if close:
+                try:
+                    close()
+                except Exception as exc:
+                    log.warning("CDP connection cleanup failed: %s", exc)
     log.error("fail: %s (%s)", url, last_err)
-    return None
+    return _legacy_result(ConversionResult("failed", error=str(last_err)), detailed)
 
 
 def process_from_md(
@@ -139,7 +237,9 @@ def process_from_md(
     overwrite: bool,
     detect_paywall: bool = False,
     paywall_timeout: float = 10.0,
-) -> Path | None:
+    *,
+    detailed: bool = False,
+) -> Path | None | ConversionResult:
     raw = md_path.read_text(encoding="utf-8")
     m = re.search(r"^#\s+(.+)$", raw, flags=re.M)
     title = m.group(1).strip() if m else md_path.stem
@@ -149,7 +249,7 @@ def process_from_md(
 
     parts = urllib.parse.urlsplit(url)
     publication = parts.netloc.split(".")[0] if parts.netloc else "substack"
-    slug = slugify(parts.path.split("/")[-1] or title)
+    slug = url_slug(url, title)
     today = dt.date.today().isoformat()
 
     fields = {
@@ -185,14 +285,26 @@ def process_from_md(
     fname = f"{fields['published']}-{fields['slug']}.md"
     out_path = target_dir / sanitize_filename(fname)
 
-    if out_path.exists() and not overwrite:
+    if out_path.is_symlink() or (out_path.exists() and not out_path.is_file()):
+        raise UnsafeOutputPathError(f"output is not a regular archive file: {out_path}")
+    pending = _pending_path(out_path)
+    if pending.is_symlink():
+        raise UnsafeOutputPathError(f"recovery marker is a symlink: {pending}")
+    if pending.exists():
+        try:
+            requested = json.loads(pending.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise ValueError("Damaged recovery marker; rerun the original URL capture") from exc
+        if out_path.with_suffix(".html").name in requested:
+            raise ValueError("Incomplete HTML capture; rerun the original URL capture to recover")
+    if out_path.exists() and not overwrite and not pending.exists():
         log.info("skip: exists %s", out_path)
-        return None
+        return _legacy_result(ConversionResult("skipped", out_path), detailed)
 
     md_full = with_frontmatter(fields, body_md)
-    out_path.write_text(md_full, encoding="utf-8")
+    _write_artifacts({out_path: md_full})
     log.info("ok: %s -> %s", url, out_path)
-    return out_path
+    return _legacy_result(ConversionResult("written", out_path), detailed)
 
 
 def main():
@@ -225,7 +337,12 @@ Environment variables:
     ap.add_argument("--cdp-host", default="127.0.0.1", help="CDP host")
     ap.add_argument("--cdp-port", type=int, default=9222, help="CDP port")
     ap.add_argument("--timeout", type=int, default=45, help="Per-page CDP timeout seconds")
-    ap.add_argument("--retries", type=int, default=2, help="Retries per URL on transient failures")
+    ap.add_argument(
+        "--retries",
+        type=int,
+        default=2,
+        help="Maximum attempts per URL, including the first (default: 2)",
+    )
     ap.add_argument("--sleep-ms", type=int, default=150, help="Sleep between URLs to be polite")
     ap.add_argument(
         "--detect-paywall",
@@ -263,7 +380,7 @@ Environment variables:
         "to avoid bot heuristics; parallelism is across different "
         "publications only.",
     )
-    args = ap.parse_args()
+    args = ap.parse_intermixed_args()
 
     level = logging.WARNING if args.quiet else getattr(logging, args.log_level)
     logging.basicConfig(
@@ -272,7 +389,17 @@ Environment variables:
         stream=sys.stderr,
     )
 
-    config = load_config(Path(args.config) if args.config else None)
+    for name in ("timeout", "retries", "concurrency"):
+        if getattr(args, name) < 1:
+            ap.error(f"--{name} must be at least 1")
+    if args.sleep_ms < 0:
+        ap.error("--sleep-ms must be nonnegative")
+    if not 1 <= args.cdp_port <= 65535:
+        ap.error("--cdp-port must be between 1 and 65535")
+    try:
+        config = load_config(Path(args.config) if args.config else None)
+    except (OSError, ValueError) as exc:
+        ap.error(str(exc))
     pub_mappings = config.get("publication_mappings", {})
 
     if args.base_dir:
@@ -282,102 +409,136 @@ Environment variables:
 
     url_list = list(args.urls)
     if args.urls_file:
-        with open(os.path.expanduser(args.urls_file), encoding="utf-8") as f:
-            for line in f:
-                u = line.strip()
-                if u and not u.startswith("#"):
-                    url_list.append(u)
+        try:
+            with open(os.path.expanduser(args.urls_file), encoding="utf-8") as f:
+                url_list.extend(
+                    line.strip() for line in f if line.strip() and not line.lstrip().startswith("#")
+                )
+        except OSError as exc:
+            ap.error(str(exc))
 
     if args.from_md:
         if not args.raw_url:
-            print("--url is required with --from-md")
-            sys.exit(2)
-        process_from_md(
-            Path(args.from_md),
-            base_dir,
-            pub_mappings,
-            args.raw_url,
-            args.overwrite,
-            detect_paywall=args.detect_paywall,
-            paywall_timeout=args.timeout,
+            ap.error("--url is required with --from-md")
+        if url_list:
+            ap.error("--from-md cannot be combined with URL inputs")
+        try:
+            result = process_from_md(
+                Path(args.from_md).expanduser(),
+                base_dir,
+                pub_mappings,
+                args.raw_url,
+                args.overwrite,
+                detect_paywall=args.detect_paywall,
+                paywall_timeout=args.timeout,
+                detailed=True,
+            )
+        except (OSError, ValueError) as exc:
+            log.error("failed: %s", exc)
+            return 1
+        log.warning(
+            "summary: %d written, %d skipped, 0 failed",
+            result.status == "written",
+            result.status == "skipped",
         )
-        return
+        return 0
 
     if not url_list:
         ap.print_help()
-        sys.exit(2)
+        return 2
+    for url in url_list:
+        parts = urllib.parse.urlsplit(url)
+        if parts.scheme not in ("http", "https") or not parts.hostname or parts.username:
+            ap.error(f"expected an HTTP(S) post URL: {url}")
 
-    state = _substack2md().StateFile(base_dir) if not args.no_resume else None
-    if state is not None:
-        filtered = [u for u in url_list if not state.contains(u)]
-        if len(filtered) < len(url_list):
-            log.info(
-                "resume: %d of %d URLs already completed; %d remaining",
-                len(url_list) - len(filtered),
-                len(url_list),
-                len(filtered),
-            )
-        url_list = filtered
-
-    host_locks: dict[str, threading.Lock] = {}
-    host_locks_mutex = threading.Lock()
-
-    def host_lock(host: str) -> threading.Lock:
-        with host_locks_mutex:
-            lock = host_locks.get(host)
-            if lock is None:
-                lock = threading.Lock()
-                host_locks[host] = lock
-            return lock
-
-    completed = 0
-    completed_lock = threading.Lock()
-
+    # Deduplicate before scheduling; aliases with tracking parameters share work.
+    url_list = list({cleanup_url(url): url for url in url_list}.values())
     pkg = _substack2md()
+    state = pkg.StateFile(base_dir) if not args.no_resume else None
+    index = build_url_to_note_map(base_dir)
+    counts = {"written": 0, "skipped": 0, "failed": 0}
+    if state is not None and not args.overwrite:
+        pending = []
+        for url in url_list:
+            path = index.get(cleanup_url(url))
+            complete = path is not None and path.is_file() and not _pending_path(path).exists()
+            if complete and args.also_save_html:
+                complete = path.with_suffix(".html").is_file()
+            if state.contains(url) and complete:
+                counts["skipped"] += 1
+            else:
+                pending.append(url)
+        url_list = pending
+
+    host_locks = {urllib.parse.urlsplit(url).hostname.lower(): threading.Lock() for url in url_list}
+    result_lock = threading.Lock()
+    stop = threading.Event()
 
     def worker(url: str) -> None:
-        nonlocal completed
-        if "substack.com" not in url:
-            log.warning("Not a substack URL: %s", url)
-        host = urllib.parse.urlsplit(url).netloc
-        with host_lock(host):
-            # Look up process_url via the package so tests that
-            # monkeypatch substack2md.process_url are honored.
-            out = pkg.process_url(
-                url,
-                base_dir,
-                pub_mappings,
-                args.also_save_html,
-                args.overwrite,
-                args.cdp_host,
-                args.cdp_port,
-                args.timeout,
-                args.retries,
-                detect_paywall=args.detect_paywall,
-            )
-            if out is not None and state is not None:
-                state.record(url)
-            if args.sleep_ms > 0:
-                time.sleep(args.sleep_ms / 1000.0)
-        with completed_lock:
-            completed += 1
+        host = urllib.parse.urlsplit(url).hostname.lower()
+        with host_locks[host]:
+            if stop.is_set():
+                return
+            with result_lock:
+                snapshot = dict(index)
+            try:
+                result = pkg.process_url(
+                    url,
+                    base_dir,
+                    pub_mappings,
+                    args.also_save_html,
+                    args.overwrite,
+                    args.cdp_host,
+                    args.cdp_port,
+                    args.timeout,
+                    args.retries,
+                    detect_paywall=args.detect_paywall,
+                    detailed=True,
+                    url_map=snapshot,
+                )
+                # Preserve compatibility with external replacements of process_url.
+                if not isinstance(result, ConversionResult):
+                    result = (
+                        ConversionResult("written", result)
+                        if result
+                        else ConversionResult("failed")
+                    )
+                if result.path is not None:
+                    if state is not None:
+                        state.record(url, result.path)
+                    with result_lock:
+                        index[cleanup_url(url)] = result.path
+            except Exception as exc:
+                log.error("fail: %s (%s)", url, exc)
+                result = ConversionResult("failed", error=str(exc))
+            with result_lock:
+                counts[result.status] += 1
+            stop.wait(args.sleep_ms / 1000.0)
 
+    pool = None
     try:
-        if args.concurrency <= 1:
+        if args.concurrency == 1:
             for url in url_list:
                 worker(url)
         else:
-            with ThreadPoolExecutor(max_workers=args.concurrency) as pool:
-                futures = [pool.submit(worker, u) for u in url_list]
-                for fut in as_completed(futures):
-                    try:
-                        fut.result()
-                    except Exception as exc:
-                        log.error("worker crashed: %s", exc)
+            pool = ThreadPoolExecutor(max_workers=args.concurrency)
+            futures = [pool.submit(worker, url) for url in url_list]
+            for future in as_completed(futures):
+                future.result()
     except KeyboardInterrupt:
+        stop.set()
+        if pool is not None:
+            pool.shutdown(wait=True, cancel_futures=True)
+            pool = None
+        log.warning("interrupted: rerun the same command to resume")
+        return 130
+    finally:
+        if pool is not None:
+            pool.shutdown(wait=True)
         log.warning(
-            "interrupted: %d of %d URLs processed this run; rerun the same command to resume",
-            completed,
-            len(url_list),
+            "summary: %d written, %d skipped, %d failed",
+            counts["written"],
+            counts["skipped"],
+            counts["failed"],
         )
-        sys.exit(130)
+    return 1 if counts["failed"] else 0

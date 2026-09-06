@@ -14,7 +14,9 @@ import logging
 import os
 import re
 import threading
+import time
 import urllib.parse
+from collections import deque
 from pathlib import Path
 
 from ._version import __version__
@@ -71,27 +73,34 @@ def load_config(config_path: Path | None = None) -> dict:
         "base_dir": os.getenv("SUBSTACK2MD_BASE_DIR", "~/Documents/substack-notes"),
     }
 
-    # Try to load config file
-    if config_path is None:
-        # Check environment variable
-        env_config = os.getenv("SUBSTACK2MD_CONFIG")
-        if env_config:
-            config_path = Path(env_config)
-        else:
-            # Check for config.yaml alongside the package
-            script_dir = Path(__file__).parent.parent
-            config_path = script_dir / "config.yaml"
-
-    if config_path and config_path.exists():
-        try:
-            with open(config_path, encoding="utf-8") as f:
-                user_config = yaml.safe_load(f) or {}
-                if "publication_mappings" in user_config:
-                    config["publication_mappings"] = user_config["publication_mappings"]
-                if "base_dir" in user_config:
-                    config["base_dir"] = user_config["base_dir"]
-        except Exception as e:
-            log.warning("Could not load config from %s: %s", config_path, e)
+    explicit = config_path is not None or bool(os.getenv("SUBSTACK2MD_CONFIG"))
+    config_path = Path(
+        config_path
+        or os.getenv("SUBSTACK2MD_CONFIG")
+        or Path(__file__).parent.parent / "config.yaml"
+    ).expanduser()
+    if not config_path.exists():
+        if explicit:
+            raise ValueError(f"Configuration file does not exist: {config_path}")
+        return config
+    try:
+        user_config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+    except (OSError, yaml.YAMLError) as exc:
+        raise ValueError(f"Could not load config from {config_path}: {exc}") from exc
+    if user_config is None:
+        user_config = {}
+    if not isinstance(user_config, dict):
+        raise ValueError("Configuration must be a mapping")
+    mappings = user_config.get("publication_mappings", {})
+    if not isinstance(mappings, dict) or any(
+        not isinstance(k, str) or not isinstance(v, str) or not v.strip()
+        for k, v in mappings.items()
+    ):
+        raise ValueError("publication_mappings must map strings to nonempty strings")
+    base_dir = user_config.get("base_dir", config["base_dir"])
+    if not isinstance(base_dir, str) or not base_dir.strip():
+        raise ValueError("base_dir must be a nonempty string")
+    config.update(publication_mappings=mappings, base_dir=base_dir)
 
     return config
 
@@ -114,6 +123,11 @@ def slugify(text: str) -> str:
     text = re.sub(r"[\s_-]+", "-", text)
     text = re.sub(r"^-+|-+$", "", text)
     return text
+
+
+def url_slug(url: str, fallback: str = "") -> str:
+    """Return the final nonempty path segment, also for trailing-slash URLs."""
+    return slugify(urllib.parse.urlsplit(url).path.rstrip("/").rsplit("/", 1)[-1] or fallback)
 
 
 def sanitize_filename(text: str) -> str:
@@ -176,16 +190,26 @@ SPEAKER_RE = re.compile(r"^\s*(speaker\s*\d+|host|guest)\s*[:\-]", re.I)
 
 
 def scrub_transcript_lines(md: str) -> str:
-    lines = md.splitlines()
     out = []
-    for line in lines:
-        s = line.strip()
-        if TIME_RE.match(s):
+    fence = None
+    for line in md.splitlines():
+        match = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if match:
+            marker = match.group(1)
+            if fence is None:
+                fence = marker
+            elif marker[0] == fence[0] and len(marker) >= len(fence):
+                fence = None
+            out.append(line)
             continue
-        if SPEAKER_RE.match(s):
+        if fence is not None:
+            out.append(line)
             continue
+        original = line
         line = re.sub(r"^\s*\[?\d{1,2}:\d{2}(?::\d{2})?\]?\s*", "", line)
-        out.append(line)
+        line = SPEAKER_RE.sub("", line).lstrip() if SPEAKER_RE.match(line) else line
+        if line.strip() or not original.strip():
+            out.append(line)
     return "\n".join(out)
 
 
@@ -442,10 +466,29 @@ def extract_article_fields(url: str, html: str) -> tuple[dict, str]:
     date_pub = parse_iso(date_pub) or dt.date.today().isoformat()
     date_mod = parse_iso(date_mod)
 
-    slug = slugify(urllib.parse.urlsplit(url).path.split("/")[-1] or title)
+    slug = url_slug(url, title)
 
     doc = Document(html)
     body_html = doc.summary()
+    body_text = BeautifulSoup(body_html, "lxml").get_text(" ", strip=True)
+    error_titles = {
+        "access denied",
+        "forbidden",
+        "not found",
+        "404",
+        "403",
+        "sign in",
+        "log in",
+        "login",
+        "just a moment...",
+    }
+    page_title = soup.title.get_text(" ", strip=True).lower() if soup.title else ""
+    if not body_text or (
+        not ld and (str(title).strip().lower() in error_titles or page_title in error_titles)
+    ):
+        raise ValueError("Capture does not contain a valid article (empty or error/login page)")
+    if not title and not ld and soup.select_one('input[type="password"]'):
+        raise ValueError("Capture contains a login form instead of an article")
     body_md = html_to_markdown_clean(body_html)
 
     body_md = scrub_transcript_lines(body_md)
@@ -514,6 +557,7 @@ class CDPClient:
         self.timeout = timeout
         self.ws = None
         self.msg_id = 0
+        self._events = deque()
 
     def connect(self):
         resp = requests.get(f"http://{self.host}:{self.port}/json/version", timeout=self.timeout)
@@ -528,30 +572,60 @@ class CDPClient:
         if sessionId:
             msg["sessionId"] = sessionId
         self.ws.send(json.dumps(msg))
+        deadline = getattr(self, "_capture_deadline", None) or time.monotonic() + self.timeout
         while True:
-            raw = self.ws.recv()
-            obj = json.loads(raw)
+            obj = self._receive(deadline)
             if obj.get("id") == self.msg_id:
                 if "error" in obj:
                     raise RuntimeError(f"{method} error: {obj['error']}")
                 return obj.get("result", {})
+            if "method" in obj:
+                self._events.append(obj)
+
+    def _receive(self, deadline):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("Timeout waiting for CDP response")
+        self.ws.settimeout(remaining)
+        return json.loads(self.ws.recv())
+
+    def close(self):
+        """Release the connection without closing the browser itself."""
+        if self.ws is not None:
+            try:
+                self.ws.close()
+            finally:
+                self.ws = None
+                self._events.clear()
 
     def recv_event_until(self, event: str, sessionId: str | None, timeout: int):
-        import time
+        def matches(obj):
+            return obj.get("method") == event and (
+                sessionId is None or obj.get("sessionId") == sessionId
+            )
 
-        deadline = time.time() + timeout
-        while time.time() < deadline:
-            try:
-                raw = self.ws.recv()
-                obj = json.loads(raw)
-                if "method" in obj and obj["method"] == event:
-                    if sessionId is None or obj.get("sessionId") == sessionId:
-                        return obj
-            except Exception:
-                continue
-        raise TimeoutError(f"Timeout waiting for {event}")
+        for obj in self._events:
+            if matches(obj):
+                self._events.remove(obj)
+                return obj
+        deadline = min(
+            time.monotonic() + timeout, getattr(self, "_capture_deadline", None) or float("inf")
+        )
+        while True:
+            obj = self._receive(deadline)
+            if matches(obj):
+                return obj
+            if "method" in obj:
+                self._events.append(obj)
 
     def fetch_html(self, url: str) -> str:
+        self._capture_deadline = time.monotonic() + self.timeout
+        try:
+            return self._fetch_html(url)
+        finally:
+            self._capture_deadline = None
+
+    def _fetch_html(self, url: str) -> str:
         res = self.send("Target.createTarget", {"url": "about:blank"})
         targetId = res.get("targetId")
         if not targetId:
@@ -562,20 +636,35 @@ class CDPClient:
             if not sessionId:
                 raise RuntimeError("Failed to attach to target")
             self.send("Page.enable", sessionId=sessionId)
-            self.send("Page.navigate", {"url": url}, sessionId=sessionId)
-            try:
-                self.recv_event_until(
-                    "Page.loadEventFired", sessionId=sessionId, timeout=self.timeout
+            # about:blank may load during attachment. It is not evidence that
+            # the requested navigation completed.
+            self._events = deque(
+                event
+                for event in self._events
+                if not (
+                    event.get("method") == "Page.loadEventFired"
+                    and event.get("sessionId") == sessionId
                 )
-            except TimeoutError:
-                pass
+            )
+            res = self.send("Page.navigate", {"url": url}, sessionId=sessionId)
+            if res.get("errorText") or res.get("isDownload"):
+                raise RuntimeError(
+                    f"Navigation failed: {res.get('errorText') or 'download response'}"
+                )
+            self.recv_event_until("Page.loadEventFired", sessionId=sessionId, timeout=self.timeout)
             res = self.send(
                 "Runtime.evaluate",
                 {"expression": "document.documentElement.outerHTML", "returnByValue": True},
                 sessionId=sessionId,
             )
-            return res.get("result", {}).get("value", "")
+            if res.get("exceptionDetails"):
+                raise RuntimeError(f"HTML evaluation failed: {res['exceptionDetails']}")
+            value = res.get("result", {}).get("value")
+            if not isinstance(value, str) or not value.strip():
+                raise RuntimeError("HTML evaluation returned no document")
+            return value
         finally:
+            self._capture_deadline = None
             # Always close the Chrome target, even if navigation or eval
             # raised. Leaked targets accumulate during long batches.
             try:
@@ -591,8 +680,11 @@ class CDPClient:
 
 def build_url_to_note_map(base_dir: Path) -> dict[str, Path]:
     url_map = {}
+    root = base_dir.resolve()
     for p in base_dir.rglob("*.md"):
         try:
+            if not p.resolve().is_relative_to(root):
+                continue
             with p.open("r", encoding="utf-8") as f:
                 head = f.read(4096)
             if head.startswith("---"):
@@ -610,23 +702,52 @@ def build_url_to_note_map(base_dir: Path) -> dict[str, Path]:
 LINK_RE = re.compile(r"\[([^\]]+)\]\((https?://[^\)]+)\)")
 
 
-def rewrite_internal_links(md: str, url_map: dict[str, Path]) -> tuple[str, int, int]:
+def rewrite_internal_links(
+    md: str, url_map: dict[str, Path], *, base_dir: Path | None = None
+) -> tuple[str, int, int]:
     internal, external = 0, 0
 
     def repl(m):
         nonlocal internal, external
         text = m.group(1)
-        url = cleanup_url(m.group(2))
+        original_url = m.group(2)
+        url = cleanup_url(original_url)
         if url in url_map:
-            name = url_map[url].stem
+            note = url_map[url]
+            name = note.stem
+            if base_dir is not None:
+                try:
+                    name = note.resolve().relative_to(base_dir.resolve()).with_suffix("").as_posix()
+                except ValueError:
+                    pass
             internal += 1
-            return f"[[{name}]]"
+            fragment = urllib.parse.urlsplit(original_url).fragment
+            target = name + (f"#{fragment}" if fragment else "")
+            return f"[[{target}|{text}]]"
         else:
             external += 1
-            return f"[{text}]({url})"
+            return m.group(0)
 
-    md2 = LINK_RE.sub(repl, md)
-    return md2, internal, external
+    lines = []
+    fence = None
+    for line in md.splitlines(keepends=True):
+        match = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if match:
+            marker = match.group(1)
+            if fence is None:
+                fence = marker
+            elif marker[0] == fence[0] and len(marker) >= len(fence):
+                fence = None
+            lines.append(line)
+        elif fence is not None:
+            lines.append(line)
+        else:
+            # Inline code is literal, too. Keep matching backtick runs intact.
+            parts = re.split(r"(`+)(.*?)(\1)", line)
+            for index in range(0, len(parts), 4):
+                parts[index] = LINK_RE.sub(repl, parts[index])
+            lines.append("".join(parts))
+    return "".join(lines), internal, external
 
 
 # --------------------------
@@ -656,6 +777,9 @@ def with_frontmatter(fields: dict, body_md: str) -> str:
         "source": fields.get("source", f"substack2md v{__version__}"),
     }
     fm = {k: v for k, v in fm.items() if v is not None}
+    for key in ("is_paid", "audience"):
+        if key in fields:
+            fm[key] = fields[key]
     front = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).strip()
     return f"---\n{front}\n---\n\n{body_md}"
 
@@ -670,13 +794,15 @@ STATE_FILENAME = ".substack2md-state"
 class StateFile:
     """Append-only log of cleaned URLs that have been successfully written.
 
-    Lives at ``<base_dir>/<STATE_FILENAME>`` as one URL per line.  Trivially
-    human-readable; delete the file to force a full re-run.  Thread-safe.
+    Lives at ``<base_dir>/<STATE_FILENAME>``. Legacy URL lines remain valid;
+    new JSON lines optionally associate a relative output path so missing
+    artifacts can be retried. Delete the file to reset resume. Thread-safe.
     """
 
     def __init__(self, base_dir: Path):
         self.path = base_dir / STATE_FILENAME
         self._seen: set = set()
+        self._outputs: dict[str, Path] = {}
         self._loaded = False
         self._lock = threading.Lock()
 
@@ -685,9 +811,18 @@ class StateFile:
             return
         self._loaded = True
         try:
+            if self.path.is_symlink():
+                raise OSError("Refusing symlinked state file")
             with self.path.open("r", encoding="utf-8") as f:
                 for line in f:
                     u = line.strip()
+                    if u.startswith("{"):
+                        try:
+                            entry = json.loads(u)
+                            u = entry["url"]
+                            self._outputs[u] = (self.path.parent / entry["output"]).resolve()
+                        except (ValueError, KeyError, TypeError):
+                            continue
                     if u:
                         self._seen.add(u)
         except FileNotFoundError:
@@ -698,18 +833,42 @@ class StateFile:
     def contains(self, url: str) -> bool:
         with self._lock:
             self._load()
-            return cleanup_url(url) in self._seen
+            cleaned = cleanup_url(url)
+            return cleaned in self._seen and (
+                cleaned not in self._outputs or self._outputs[cleaned].is_file()
+            )
 
-    def record(self, url: str) -> None:
+    def record(self, url: str, output_path: Path | None = None) -> None:
         cleaned = cleanup_url(url)
         with self._lock:
             self._load()
-            if cleaned in self._seen:
+            output = Path(output_path).resolve() if output_path is not None else None
+            if cleaned in self._seen and (output is None or self._outputs.get(cleaned) == output):
                 return
-            self._seen.add(cleaned)
             try:
                 ensure_dir(self.path.parent)
-                with self.path.open("a", encoding="utf-8") as f:
-                    f.write(cleaned + "\n")
+                # O_NOFOLLOW closes the check/open race for the final path.
+                if self.path.is_symlink():
+                    raise OSError("Refusing symlinked state file")
+                fd = os.open(
+                    self.path,
+                    os.O_WRONLY | os.O_CREAT | os.O_APPEND | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                )
+                with os.fdopen(fd, "a", encoding="utf-8") as f:
+                    entry = (
+                        cleaned
+                        if output is None
+                        else json.dumps(
+                            {
+                                "url": cleaned,
+                                "output": os.path.relpath(output, self.path.parent.resolve()),
+                            }
+                        )
+                    )
+                    f.write(entry + "\n")
+                self._seen.add(cleaned)
+                if output is not None:
+                    self._outputs[cleaned] = output
             except Exception as exc:
                 log.warning("state: could not append %s: %s", self.path, exc)

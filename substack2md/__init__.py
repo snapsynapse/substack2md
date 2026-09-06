@@ -50,10 +50,11 @@ from ._core import (
     scrub_transcript_lines,
     # utilities
     slugify,
+    url_slug,
     # frontmatter
     with_frontmatter,
 )
-from .cli import main, process_from_md, process_url
+from .cli import ConversionResult, main, process_from_md, process_url
 
 __all__ = [
     "__version__",
@@ -68,6 +69,8 @@ __all__ = [
     "load_config",
     "get_publication_name",
     "slugify",
+    "url_slug",
+    "ConversionResult",
     "sanitize_filename",
     "ensure_dir",
     "publication_output_dir",

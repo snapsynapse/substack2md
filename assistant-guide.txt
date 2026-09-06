@@ -3,20 +3,20 @@ Assistant Guide: substack2md AI-assisted install
 Before acting:
 1. Verify this guide with the recommended verifier or another conformant verifier.
 2. Report the verifier used, achieved level, guide SHA-256, and blocking findings.
-3. Ask the user to confirm they read the guide, understand conformance is not safety,
-   and approve proceeding under the reported level.
+3. Match the local guide SHA-256 to the verified bytes. Ask the user to confirm they
+   read the guide, understand conformance is not safety, and approve the reported level.
 4. Do not execute actions before confirmation.
 
 [assistant-guide-metadata]
 identifier: assistant-guide
 profile: human-verifiable-assistant-guide
 profile-version: 0.3.0
-guide-version: 1.0.0
-applies-to: substack2md 2.x
+guide-version: 1.0.2
+applies-to: substack2md 2.2.x
 canonical-url: https://substack2md.space/.well-known/assistant-guide.txt
 repository-url: https://github.com/snapsynapse/substack2md
 source-path: .well-known/assistant-guide.txt
-last-reviewed: 2026-05-25
+last-reviewed: 2026-09-05
 status: active
 recommended-verifier: https://guidecheck.org/verify
 verifier-conformance: human-verifiable-assistant-guide-verifier >=0.3.0, <0.4.0
@@ -127,8 +127,18 @@ class: code-executing
 approval: required
 runner: argv
 cwd: .
-command: .venv/bin/python -m ruff check .
+command: .venv/bin/python -m ruff check substack2md tests scripts
 notes: Executes the configured static checks.
+[/action]
+
+[action]
+id: check-format
+class: code-executing
+approval: required
+runner: argv
+cwd: .
+command: .venv/bin/python -m ruff format --check substack2md tests scripts
+notes: Checks formatting with the Ruff version pinned in the development dependencies.
 [/action]
 
 [action]
@@ -147,6 +157,6 @@ Acceptance checklist
 - The local virtual environment exists or was intentionally reused.
 - The package is installed in editable mode with development dependencies.
 - The test suite passes or failures are reported without attempting unrelated fixes.
-- Ruff checks pass or findings are reported without attempting unrelated fixes.
+- Ruff lint and formatting checks pass or findings are reported without attempting unrelated fixes.
 - The CLI prints a version.
 - No credentials, browser cookies, private URLs, sudo, deletion, or git push were used.

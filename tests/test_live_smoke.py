@@ -2,7 +2,7 @@
 Optional live smoke test.  Skipped unless SUBSTACK2MD_LIVE=1.
 
 Hits the real Substack API.  Use it to confirm the endpoint contract
-hasn't shifted.  Picks two well-known free posts; does NOT require
+hasn't shifted.  Checks a public post; does NOT require
 an authenticated session.
 
 Run:
@@ -21,26 +21,23 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-# Known publication + slug pairs; pick ones likely to stay up.
-# These are free posts from well-established Substacks.  If they rot,
-# swap them -- the goal is just to exercise the real endpoint.
+# A public post from the maintainer's publication, verified September 5, 2026.
+# If it moves, replace the fixture after checking the public archive.
 FREE_CASES = [
     # (publication, slug)
-    ("platformer", "the-big-tech-antitrust-era-begins"),
+    ("sigsub", "good-enough-for-agentic-work"),
 ]
 
 
 @pytest.mark.parametrize("pub,slug", FREE_CASES)
 def test_live_endpoint_contract_has_audience_field(pub, slug):
     out = substack2md.fetch_paywall_status(pub, slug)
-    # Either the API is reachable and we see a string audience,
-    # or it failed gracefully (None).  Both are acceptable; what
-    # we're really checking is "no raise".
-    assert out["audience"] in (
-        None,
-        "everyone",
-        "only_free",
-        "only_paid",
-        "founding",
-    ) or isinstance(out["audience"], str)
-    assert out["is_paid"] in (None, True, False)
+    assert isinstance(out["audience"], str) and out["audience"].strip(), (
+        f"Could not verify the live API contract for {pub}/{slug}: "
+        "the endpoint was unavailable or returned no audience. "
+        "Check connectivity and whether the fixture post still exists."
+    )
+    assert isinstance(out["is_paid"], bool), (
+        f"Unrecognized live audience {out['audience']!r}; update audience handling "
+        "only after verifying the current API contract."
+    )

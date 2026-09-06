@@ -29,8 +29,13 @@ jobs:
 
       - name: Lint (ruff)
         run: |
-          ruff check substack2md tests
-          ruff format --check substack2md tests
+          ruff check substack2md tests scripts
+          ruff format --check substack2md tests scripts
 
       - name: Run tests
         run: pytest tests/ -v --tb=short
+
+      - name: Build wheel and smoke test a clean installation
+        run: |
+          python -m pip wheel --no-deps --wheel-dir "$RUNNER_TEMP/wheels" .
+          python scripts/smoke_wheel.py "$RUNNER_TEMP"/wheels/substack2md-*.whl

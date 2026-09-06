@@ -1,0 +1,11 @@
+include README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md LICENSE
+include launch-browser.sh config.yaml.example urls.txt.example
+include assistant-guide.txt assistant-guide-manifest.txt
+include .well-known/assistant-guide.txt
+include .github/workflows/tests.yml
+recursive-include tests *.py *.html
+recursive-include scripts *.py
+recursive-include docs *.md *.html *.txt *.xml *.svg *.webmanifest *.png
+include docs/CNAME docs/.nojekyll docs/_headers
+include docs/.well-known/assistant-guide.txt docs/.well-known/assistant-guide-manifest.txt
+include imgs/og.png

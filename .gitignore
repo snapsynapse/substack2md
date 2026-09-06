@@ -270,3 +270,6 @@ node_modules/
 # --- portfolio baseline (2026-07-04): transient dirs ---
 handoffs/
 working/
+
+# Synthetic extraction fixtures are source-controlled, not captured output.
+!tests/fixtures/*.html

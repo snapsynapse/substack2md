@@ -15,7 +15,7 @@ This is intentional and required for the tool to work. It also means the CDP end
 Launch your browser with the exact flags shown in the README. In particular:
 
 - `--remote-debugging-port=9222` opens the CDP port on the loopback interface only.
-- `--remote-allow-origins=http://127.0.0.1:9222` restricts WebSocket upgrade requests to the loopback origin, mitigating DNS-rebinding attacks.
+- `--remote-allow-origins=http://127.0.0.1:9222` permits that WebSocket origin; it does not set the listening interface or authenticate clients. Keep the endpoint local and do not forward its port.
 - `--user-data-dir="$HOME/.brave-cdp-profile"` isolates the CDP-enabled profile from your main browsing profile.
 
 Do not:
@@ -30,12 +30,12 @@ When `--detect-paywall` is enabled, substack2md makes unauthenticated HTTPS call
 
 ## AI-assisted install guide
 
-The repository includes `.well-known/assistant-guide.txt`, a byte-identical root `assistant-guide.txt` copy, a GitHub Pages source copy under `docs/.well-known/assistant-guide.txt`, and `assistant-guide-manifest.txt` for GuideCheck-style AI-assisted local installation. The served guide currently targets Level 3, and the manifest is maintained as a local integrity aid. Treat these files as security-relevant operational instructions:
+The repository includes `.well-known/assistant-guide.txt`, a byte-identical root `assistant-guide.txt` copy, a GitHub Pages source copy under `docs/.well-known/assistant-guide.txt`, and `assistant-guide-manifest.txt` for GuideCheck-style AI-assisted local installation. The guide targets profile 0.3.0, and the manifest is a local integrity aid; verify exact bytes before relying on a conformance result. Treat these files as security-relevant operational instructions:
 
 - Review the full plain-text guide before authorizing an assistant to act.
 - Verify the guide with a conformant verifier such as https://guidecheck.org/verify.
 - Do not treat GuideCheck conformance as proof that commands, dependencies, or publishers are safe.
-- Keep both guide copies and the manifest in sync with install, dependency, test, lint, and local setup changes.
+- Keep all three guide copies and both manifests in sync with install, dependency, test, lint, and local setup changes.
 
 ## Reporting a vulnerability
 
