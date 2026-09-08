@@ -1,6 +1,8 @@
 import hashlib
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 GUIDE = ROOT / ".well-known" / "assistant-guide.txt"
 ROOT_GUIDE = ROOT / "assistant-guide.txt"
@@ -8,6 +10,7 @@ PAGES_GUIDE = ROOT / "docs" / ".well-known" / "assistant-guide.txt"
 MANIFEST = ROOT / "assistant-guide-manifest.txt"
 PAGES_MANIFEST = ROOT / "docs" / ".well-known" / "assistant-guide-manifest.txt"
 PAGES_HEADERS = ROOT / "docs" / "_headers"
+IMMUTABLE_RELEASE_URL = "https://github.com/snapsynapse/substack2md/releases/tag/v2.2.0"
 
 
 def _metadata(text: str) -> dict[str, str]:
@@ -22,11 +25,41 @@ def _metadata(text: str) -> dict[str, str]:
 
 def _key_values(text: str) -> dict[str, str]:
     out = {}
-    for line in text.splitlines():
+    for line_number, line in enumerate(text.splitlines(), start=1):
         if line:
+            assert ": " in line, f"manifest line {line_number} is malformed"
             key, value = line.split(": ", 1)
+            assert key not in out, f"manifest key {key!r} is duplicated"
+            assert key and value, f"manifest line {line_number} has an empty key or value"
             out[key] = value
     return out
+
+
+def _validate_manifest(text: str, guide_data: bytes) -> dict[str, str]:
+    manifest = _key_values(text)
+    required = {
+        "guide-path",
+        "guide-version",
+        "guide-sha256",
+        "guide-bytes",
+        "immutable-release-url",
+        "profile",
+        "profile-version",
+        "canonical-url",
+        "repository-url",
+    }
+    assert required <= set(manifest)
+    metadata = _metadata(guide_data.decode("ascii"))
+    assert manifest["guide-path"] == "/.well-known/assistant-guide.txt"
+    assert manifest["guide-version"] == metadata["guide-version"]
+    assert manifest["guide-sha256"] == hashlib.sha256(guide_data).hexdigest()
+    assert int(manifest["guide-bytes"]) == len(guide_data)
+    assert manifest["immutable-release-url"] == IMMUTABLE_RELEASE_URL
+    assert manifest["profile"] == metadata["profile"]
+    assert manifest["profile-version"] == metadata["profile-version"]
+    assert manifest["canonical-url"] == metadata["canonical-url"]
+    assert manifest["repository-url"] == metadata["repository-url"]
+    return manifest
 
 
 def _action_blocks(text: str) -> list[dict[str, str]]:
@@ -88,14 +121,23 @@ def test_assistant_guide_required_metadata():
 
 def test_assistant_guide_manifest_matches_bytes():
     data = GUIDE.read_bytes()
-    manifest = _key_values(MANIFEST.read_text(encoding="ascii"))
+    _validate_manifest(MANIFEST.read_text(encoding="ascii"), data)
 
-    assert manifest["guide-path"] == "/.well-known/assistant-guide.txt"
-    assert int(manifest["guide-bytes"]) == len(data)
-    assert manifest["guide-sha256"] == hashlib.sha256(data).hexdigest()
-    assert manifest["profile"] == "human-verifiable-assistant-guide"
-    assert manifest["profile-version"] == "0.3.0"
-    assert "immutable-release-url" not in manifest
+
+@pytest.mark.parametrize(
+    "invalid_manifest",
+    [
+        lambda text: text.replace(f"immutable-release-url: {IMMUTABLE_RELEASE_URL}\n", ""),
+        lambda text: text.replace("/v2.2.0\n", "/v2.1.2\n"),
+        lambda text: text.replace("immutable-release-url: ", "immutable-release-url="),
+        lambda text: text + f"immutable-release-url: {IMMUTABLE_RELEASE_URL}\n",
+    ],
+    ids=["missing", "stale", "malformed", "duplicate"],
+)
+def test_assistant_guide_manifest_rejects_invalid_immutable_release_url(invalid_manifest):
+    manifest = MANIFEST.read_text(encoding="ascii")
+    with pytest.raises(AssertionError):
+        _validate_manifest(invalid_manifest(manifest), GUIDE.read_bytes())
 
 
 def test_assistant_guide_static_header_policy():
