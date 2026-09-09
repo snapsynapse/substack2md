@@ -2,6 +2,8 @@
 
 This is a small personal archival tool with a maintenance-only contribution scope. Contributions should address correctness, security, dependency or browser compatibility, regression coverage, or documentation. New platforms, formats, and UI features are outside the current scope. See [docs/MAINTENANCE.md](docs/MAINTENANCE.md).
 
+Start with [INTENT.md](INTENT.md) for purpose and boundaries, and [repo-standards.yaml](repo-standards.yaml) for standards applicability, adoption state, owned surfaces, and verification expectations. The declaration is a pilot inventory, not a conformance result; update it when those facts change and keep dated results in review or release evidence.
+
 ## Local checks
 
 Create and activate an isolated environment, then install the development dependencies declared in `pyproject.toml`. Use its pinned Ruff version, which is also used in CI.

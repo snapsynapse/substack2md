@@ -1,0 +1,156 @@
+# Pilot declaration of expectations, not an audit result or publication receipt.
+schema_version: 1
+intent: INTENT.md
+roles:
+  - application
+  - personal-utility
+  - hosted
+  - agent-facing
+surfaces:
+  cli-package:
+    kind: package
+    sources: [substack2md, pyproject.toml, MANIFEST.in]
+    producer: generated
+    build: python -m pip wheel --no-deps --wheel-dir dist .
+    delivery: GitHub Releases and the separately maintained Homebrew tap; no PyPI publication. Wheel membership follows setuptools and source-archive additions follow MANIFEST.in.
+  website:
+    kind: website
+    sources: [docs/index.html, docs/404.html, docs/llms.txt, docs/robots.txt, docs/sitemap.xml, docs/CNAME]
+    outputs: [docs]
+    urls: [https://substack2md.space/]
+    producer: manual
+    delivery: Hand-authored docs/ is the GitHub Pages source; deployment and served-byte acceptance require separate evidence.
+  install-guide:
+    kind: guide
+    sources: [.well-known/assistant-guide.txt, assistant-guide-manifest.txt]
+    outputs: [assistant-guide.txt, docs/.well-known/assistant-guide.txt, docs/.well-known/assistant-guide-manifest.txt]
+    urls: [https://substack2md.space/.well-known/assistant-guide.txt]
+    producer: manual
+    delivery: Maintain guide copies and manifests together; MANIFEST.in includes them in the source archive. Matching copies establish local integrity, not independent publisher provenance or hosted acceptance.
+checks:
+  offline-tests:
+    command: python -m pytest tests/ -v --tb=short
+    cwd: .
+    expected: Exit 0 for the offline suite; the opt-in live API test may skip and does not establish live compatibility.
+    blocking: true
+    prerequisites: Activate an isolated environment with the development dependencies from pyproject.toml; CI exercises Python 3.10 through 3.13.
+  lint:
+    command: python -m ruff check substack2md tests scripts
+    cwd: .
+    expected: Exit 0 with no lint findings.
+    blocking: true
+    prerequisites: Ruff 0.16.1 as pinned in pyproject.toml.
+  format:
+    command: python -m ruff format --check substack2md tests scripts
+    cwd: .
+    expected: Exit 0 with no formatting changes required.
+    blocking: true
+    prerequisites: Ruff 0.16.1 as pinned in pyproject.toml.
+  guide-integrity:
+    command: python -m pytest tests/test_assistant_guide.py -v
+    cwd: .
+    expected: Exit 0 for byte bounds, metadata, mirror parity, manifests and declared action checks; this is not a full GuideCheck or hosted result.
+    blocking: true
+    prerequisites: Development dependencies installed; this focused suite is also included in offline-tests.
+  release-surfaces:
+    command: python -m pytest tests/test_release_surfaces.py -v
+    cwd: .
+    expected: Exit 0 for local version agreement, site paths and agent-summary links; no publication or deployment claim.
+    blocking: true
+    prerequisites: Development dependencies installed; this focused suite is also included in offline-tests.
+  wheel-install:
+    command: python scripts/smoke_wheel.py dist/substack2md-*.whl
+    cwd: .
+    expected: Exit 0 after a clean wheel installation, entry-point and version checks, expected failure check, and offline Markdown conversion outside the checkout.
+    blocking: true
+    prerequisites: First build exactly one wheel from the intended candidate into dist/. Installation creates a temporary environment and may contact the package index for dependencies. Required during release preparation and by CI.
+  diff:
+    command: git diff --check
+    cwd: .
+    expected: Exit 0 with no whitespace errors in the working diff.
+    blocking: true
+standards:
+  guidecheck:
+    applicability: applicable
+    reason: Publishes an assistant guide for bounded AI-assisted local installation.
+    adoption: adopted
+    profile: human-verifiable-assistant-guide 0.3.0
+    surfaces: [install-guide]
+    checks: [guide-integrity]
+    evidence: [README.md#ai-assisted-installation, .well-known/assistant-guide.txt, tests/test_assistant_guide.py]
+  siteline:
+    applicability: applicable
+    reason: The public website and installation guide are intended for agent consumption; hosted changes require findings reconciliation and post-deployment evidence.
+    adoption: adopted
+    surfaces: [website, install-guide]
+    checks: []
+    evidence: [CONTRIBUTING.md#hosted-site-siteline-assessment]
+  skill-a11y-audit:
+    applicability: applicable
+    reason: Owns a hosted landing page. No dedicated accessibility gate or current major-finding evidence is recorded in this repository; assessment remains open.
+    adoption: unresolved
+    surfaces: [website]
+    checks: []
+    evidence: [docs/index.html, CONTRIBUTING.md#hosted-site-siteline-assessment]
+  hardguard25:
+    applicability: not-applicable
+    reason: The CLI and guide do not declare an LLM token-budget or HardGuard25 metadata interface; ordinary capture timeouts and retry settings are CLI controls.
+    adoption: not-applicable
+    surfaces: [cli-package, install-guide]
+    checks: []
+    evidence: [pyproject.toml, assistant-guide.txt]
+  graceful-boundaries:
+    applicability: unresolved
+    reason: The installation guide contains limits and stop conditions, but no Graceful Boundaries conformance declaration or evaluator is present. Review whether that surface requires adoption; a related-site link is insufficient evidence.
+    adoption: unresolved
+    surfaces: [install-guide]
+    checks: []
+    evidence: [assistant-guide.txt, docs/llms.txt]
+  turnfile:
+    applicability: unresolved
+    reason: Applies according to collaboration-session needs; no repository-local Turnfile session protocol is declared. This inventory does not assert session conformance.
+    adoption: unresolved
+    surfaces: []
+    checks: []
+    evidence: [CONTRIBUTING.md]
+  skill-provenance:
+    applicability: not-applicable
+    reason: Produces a Python package and installation guide, not a canonical agent-skill bundle.
+    adoption: not-applicable
+    surfaces: [cli-package, install-guide]
+    checks: []
+    evidence: [pyproject.toml, MANIFEST.in]
+  ai-posture:
+    applicability: unresolved
+    reason: The CLI is a browser-assisted archival tool and the repository offers AI-assisted installation. Determine the applicable posture scope against the owning standard before introducing a declaration.
+    adoption: unresolved
+    surfaces: [cli-package, website, install-guide]
+    checks: []
+    evidence: [INTENT.md#what-this-product-is, README.md#ai-assisted-installation]
+  obligation-first:
+    applicability: unresolved
+    reason: No regulatory-scope assessment or adoption decision is established by this repository inventory; purpose and content-rights notices do not settle applicability.
+    adoption: unresolved
+    surfaces: [cli-package, website]
+    checks: []
+    evidence: [INTENT.md#scope-boundaries]
+  everyailaw:
+    applicability: unresolved
+    reason: The repository does not establish the operating-region and AI-regulatory scope needed to decide whether a citation is required.
+    adoption: unresolved
+    surfaces: [cli-package, website]
+    checks: []
+    evidence: [SECURITY.md]
+  self-conformance:
+    applicability: not-applicable
+    reason: This is a maintained application and utility, not an open specification with its own conformance ladder.
+    adoption: not-applicable
+    surfaces: [cli-package]
+    checks: []
+    evidence: [INTENT.md#what-this-product-is]
+reassess_when:
+  - Product scope, distribution channels, supported environments, or privacy boundaries change.
+  - A public site, API, agent-skill bundle, or AI runtime capability is added or removed.
+  - Website generation, deployment paths, guide mirrors, or package membership change.
+  - A guide profile, standards claim, verifier, or required release check changes.
+  - Regulatory applicability or collaboration-session requirements are resolved.
