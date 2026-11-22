@@ -1,6 +1,6 @@
 # Security
 
-The link filtering and launcher safeguards described below are unreleased changes after v2.2.0. Check the installed release before relying on them.
+The link filtering and launcher safeguards described below were added in v2.2.1. Check the installed version before relying on them.
 
 ## Threat model
 

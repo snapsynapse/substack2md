@@ -2,9 +2,9 @@
 
 Convert Substack posts to clean, Obsidian-friendly Markdown using your authenticated browser session.
 
-This documentation describes version 2.2.0. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
+This documentation describes version 2.2.1. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
 
-This checkout also contains unreleased link-safety and macOS launcher changes. The published v2.2.0 artifacts do not include those changes.
+Version 2.2.1 includes link-safety and macOS launcher changes. Earlier v2.2.0 artifacts do not include those safeguards.
 
 ## Why This Exists
 
@@ -318,7 +318,7 @@ is_paid: false
 audience: "everyone"
 links_internal: 3
 links_external: 12
-source: "substack2md v2.2.0"
+source: "substack2md v2.2.1"
 ---
 
 Content starts here...

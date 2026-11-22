@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-11-22
+
 ### Fixed
 
 - Neutralize unsafe link schemes and Markdown syntax from captured HTML; retain ordinary links and leave unsafe wikilink aliases as standard Markdown links. Imported Markdown remains a separate open path.
@@ -131,7 +133,8 @@ Major release. Restructures the project from a single-file script into an instal
 
 First tagged reference point. CDP-driven Substack-to-markdown converter with Obsidian wikilink rewriting, publication mapping, transcript cleanup, and batch URL file support.
 
-[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.2.1...HEAD
+[2.2.1]: https://github.com/snapsynapse/substack2md/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/snapsynapse/substack2md/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/snapsynapse/substack2md/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/snapsynapse/substack2md/compare/v2.1.0...v2.1.1

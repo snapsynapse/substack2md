@@ -1,4 +1,5 @@
 include README.md CHANGELOG.md CONTRIBUTING.md SECURITY.md LICENSE
+include INTENT.md repo-standards.yaml substack2md-threat-model.md
 include launch-browser.sh config.yaml.example urls.txt.example
 include assistant-guide.txt assistant-guide-manifest.txt
 include .well-known/assistant-guide.txt
