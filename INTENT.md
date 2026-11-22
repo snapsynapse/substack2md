@@ -15,7 +15,7 @@ The tool makes a reading archive usable outside Substack by preserving post meta
 
 These summarize existing behavior and maintenance requirements, rather than introducing new product commitments.
 
-1. Capture uses a user-controlled browser session. The documented setup isolates its profile and keeps the sensitive CDP endpoint local; credentials and private captured content are excluded from fixtures and routine logs.
+1. Capture uses a user-controlled browser session. The documented setup isolates its profile and keeps the sensitive CDP endpoint local. Fixtures exclude credentials and private captured content; routine logs can still include raw input URLs until the open logging finding in [the security audit](docs/security/audits/audit-2026-11-22.md) is fixed.
 2. Archive paths remain inside the configured output root. Requested artifacts must be written before a capture is recorded as complete, and failed batch items produce a nonzero exit status.
 3. Unknown paywall metadata remains unknown. Capture and metadata checks do not prove article completeness or redistribution rights.
 4. Offline regression checks work without a browser or credentials. API compatibility and authenticated browser capture require their own evidence.
@@ -40,4 +40,5 @@ The installation guide declares GuideCheck profile 0.3.0. Hosted-site changes us
 
 ## Changelog
 
+- 2026-11-22: Clarified the open URL-logging limit after checking the current CLI against the security audit.
 - 2026-09-08: Consolidated existing maintenance scope and distribution boundaries; added a repository-local standards declaration pilot without changing runtime behavior or publication status.

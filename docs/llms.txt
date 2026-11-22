@@ -2,7 +2,7 @@
 
 Substack posts to clean, Obsidian-friendly Markdown.
 
-substack2md is a Python command-line tool that converts Substack posts to clean Markdown using your authenticated Chrome browser session via the Chrome DevTools Protocol (CDP). It produces YAML frontmatter, [[Publication/YYYY-MM-DD-slug|Original label]] wikilinks for cross-references, and rewrites images and embeds as plain links so the output is portable across Obsidian, static site generators, and plain text editors. Optional paywall detection tags posts as free or subscriber-only via Substack's public API.
+substack2md is a Python command-line tool that converts Substack posts to clean Markdown using your authenticated Chrome or Brave browser session via the Chrome DevTools Protocol (CDP). It can also clean an existing Markdown export without a browser. It produces YAML frontmatter, [[Publication/YYYY-MM-DD-slug|Original label]] wikilinks for cross-references, and rewrites images and embeds as plain links so the output is portable across Obsidian, static site generators, and plain text editors. Optional paywall detection tags posts as free or subscriber-only via Substack's public API.
 
 ## Key concepts
 

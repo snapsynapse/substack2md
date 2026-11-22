@@ -1,5 +1,7 @@
 # Version 2.2.0 release preparation
 
+Historical preparation record. Version 2.2.0 was published on September 5, 2026 America/Denver; the [GitHub release](https://github.com/snapsynapse/substack2md/releases/tag/v2.2.0) owns the published artifacts. The candidate and delivery sequence below describe that completed release, not steps to repeat for the current source.
+
 Prepared: 2026-09-05. Scope: substack2md only.
 Baseline: `563f685830a61bd35910341e33307b5b3e404d02` on `main`; release baseline for the maintenance changes.
 
@@ -11,7 +13,7 @@ Release notes: [v2.2.0](releases/v2.2.0.md). Continuing procedure: [MAINTENANCE.
 
 ## Local validation and artifact record
 
-The source suite passes 123 tests with one opt-in live test skipped, using Python 3.14.7 and Ruff 0.16.1. The separate public API test passed during maintenance implementation. No authenticated browser capture was performed. HTML fixtures are synthetic and CDP messages are simulated.
+At preparation on September 5, the source suite passed 123 tests with one opt-in live test skipped, using Python 3.14.7 and Ruff 0.16.1. The separate public API test passed during maintenance implementation. No authenticated browser capture was performed. HTML fixtures were synthetic and CDP messages were simulated.
 
 The ignored local `dist/2.2.0/` bundle holds the prepared artifacts, checksums, exact working-tree fingerprint, stage-path inventory, and release-state record. This record, rather than an earlier 2.1.2 validation wheel, owns candidate package evidence. Recheck its fingerprint before staging; any source edit requires rebuilding affected artifacts and rerunning their gates.
 
@@ -24,7 +26,7 @@ Planned GitHub assets:
 
 The source snapshots exclude ignored handoffs, local configuration, browser profiles, caches, and Git metadata. No PyPI publication or Homebrew repository mutation is included in local preparation. Homebrew remains a separate distribution follow-up after the release exists.
 
-## Prepared delivery sequence
+## Historical prepared delivery sequence
 
 1. Recheck remote main, absence of a conflicting v2.2.0 tag/release, candidate fingerprint, and the exact path list. Finalize the changelog date under publication authority and refresh affected artifacts.
 2. Stage only reviewed paths and create a signed commit titled `release: prepare substack2md v2.2.0 maintenance release`. Verify locally using an explicitly trusted allowed-signers file.

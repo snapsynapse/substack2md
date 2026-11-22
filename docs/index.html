@@ -32,7 +32,7 @@
   <meta property="og:url" content="https://substack2md.space/">
   <meta property="og:locale" content="en_US">
   <meta property="article:published_time" content="2025-10-20T00:00:00Z">
-  <meta property="article:modified_time" content="2026-09-05T00:00:00Z">
+  <meta property="article:modified_time" content="2026-11-22T00:00:00Z">
   <meta property="article:author" content="Sam Rogers">
   <meta property="article:publisher" content="https://snapsynapse.com/">
   <meta property="article:section" content="Tools">
@@ -67,7 +67,7 @@
     "operatingSystem": "macOS, Linux, Windows",
     "softwareVersion": "2.2.0",
     "datePublished": "2025-10-20",
-    "dateModified": "2026-09-05",
+    "dateModified": "2026-11-22",
     "license": "https://github.com/snapsynapse/substack2md/blob/main/LICENSE",
     "codeRepository": "https://github.com/snapsynapse/substack2md",
     "programmingLanguage": "Python",
@@ -426,7 +426,7 @@
       <span class="sep">&middot;</span>
       Published <time datetime="2025-10-20">October 20, 2025</time>
       <span class="sep">&middot;</span>
-      Updated <time datetime="2026-09-05">September 5, 2026</time>
+      Updated <time datetime="2026-11-22">November 22, 2026</time>
       <span class="sep">&middot;</span>
       <span class="version">v2.2.0</span>
       <span class="sep">&middot;</span>
@@ -472,7 +472,7 @@
         <tr><td>Archive your own newsletter</td><td>Converts the post URLs you supply, individually or in a text file. Paywall metadata is opt-in.</td></tr>
         <tr><td>Read newsletters offline in Obsidian</td><td>Saves article text with frontmatter and wikilinks. Linked images and embeds still require network access.</td></tr>
         <tr><td>Build a personal corpus for search or LLM context</td><td>Plain Markdown, one file per post, structured filenames you can grep.</td></tr>
-        <tr><td>Stop accidentally sharing paid content</td><td>Optional paywall detection writes <code>is_paid</code> and <code>audience</code> fields to frontmatter.</td></tr>
+        <tr><td>Identify paid content before sharing</td><td>Optional paywall detection writes <code>is_paid</code> and <code>audience</code> fields to frontmatter. It does not block export or establish sharing rights.</td></tr>
       </tbody>
     </table>
   </div>
@@ -481,7 +481,7 @@
 <section id="install">
   <div class="container">
     <h2>Install</h2>
-    <p>Requires Python 3.10+ and a Chrome / Chromium browser. Start Chrome with the remote debugging port, log in to Substack, then run substack2md.</p>
+      <p>Requires Python 3.10+. URL capture also requires Chrome or Brave with a local remote debugging port and a Substack login; cleaning an existing Markdown export does not require a browser.</p>
 
     <p>Homebrew on macOS or Linux:</p>
     <p>Literal</p>
@@ -536,7 +536,7 @@ python -m pip install .</pre>
   <div class="container">
     <div class="demo-block">
       <h2>Output shape</h2>
-      <p>Each post becomes a Markdown file with YAML frontmatter Obsidian and most static-site generators can read directly. This example includes optional paywall metadata from --detect-paywall.</p>
+      <p>Each post becomes a Markdown file with YAML frontmatter that Obsidian and most static-site generators can read directly. This example includes optional paywall metadata from --detect-paywall.</p>
       <div class="demo-preview"><span class="c">---</span>
 <span class="y">title:</span> The case for boring infrastructure
 <span class="y">author:</span> A. Writer
@@ -564,7 +564,7 @@ mistakes, made in slightly different orders. See also:
       <strong>Canonical reference.</strong> This page is the authoritative landing for substack2md.
       Source of truth is the <a href="https://github.com/snapsynapse/substack2md" target="_blank" rel="noopener">GitHub repository</a>;
       this page describes the version shown above; publication status is recorded in GitHub Releases. Last substantive revision:
-      <time datetime="2026-09-05">2026-09-05</time>.
+      <time datetime="2026-11-22">2026-11-22</time>.
       <a href="https://github.com/snapsynapse/substack2md/commits/main/README.md" target="_blank" rel="noopener">Revision history &rarr;</a>
     </aside>
   </div>

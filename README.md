@@ -4,6 +4,8 @@ Convert Substack posts to clean, Obsidian-friendly Markdown using your authentic
 
 This documentation describes version 2.2.0. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
 
+This checkout also contains unreleased link-safety and macOS launcher changes. The published v2.2.0 artifacts do not include those changes.
+
 ## Why This Exists
 
 Substack doesn't let you bulk-export your reading list or subscriptions in a useful format. This tool:
@@ -83,7 +85,7 @@ Installing registers a `substack2md` console script on your PATH. You can also i
 
 ### 1. Launch Your Browser with Remote Debugging
 
-The whole tool depends on connecting to a Brave or Chrome instance that was started with `--remote-debugging-port=9222`. The exact invocation differs per OS.
+URL capture depends on connecting to a Brave or Chrome instance that was started with `--remote-debugging-port=9222`. The `--from-md` cleanup path works without a browser. The browser invocation differs per OS.
 
 Regardless of OS, three principles apply:
 
@@ -265,7 +267,7 @@ substack2md POST_URL --overwrite
 # Process from existing markdown export (cleanup only)
 substack2md --from-md MARKDOWN_FILE --url POST_URL
 
-# Tag posts with paywall status (respects creators' rights)
+# Add paywall metadata; this does not block export
 substack2md --urls-file URLS_FILE --detect-paywall
 
 # Quiet mode for scripted use; errors still surface
@@ -273,12 +275,16 @@ substack2md --urls-file URLS_FILE --quiet
 ```
 ## URL File Format
 
-Create a text file with one URL per line. Replace these sample URLs with posts you want to archive.
+Create a text file with one URL per line.
+Replace: POST_URL_1 -> the full HTTPS URL of the first Substack post.
+Replace: POST_URL_2 -> the full HTTPS URL of the second Substack post.
+Replace: POST_URL_3 -> the full HTTPS URL of the third Substack post.
+Customize
 ```
-https://sigsub.substack.com/p/the-trust-gap
-https://natesnewsletter.substack.com/p/i-surveyed-100-ai-tools-that-launched
+POST_URL_1
+POST_URL_2
 # Comments start with #
-https://daveshap.substack.com/p/the-merits-of-doing-things-the-hard
+POST_URL_3
 ```
 ## Output Structure
 ```
@@ -330,16 +336,16 @@ When `--detect-paywall` is passed, substack2md queries Substack's public API to 
 
 If Substack returns an unrecognized audience value (a new tier), `audience` is preserved verbatim and `is_paid` is set to `null` so downstream workflows treat the post as "status unknown" rather than silently classifying it as free. On API failure (non-200, timeout, non-JSON) both fields are `null` and the pipeline continues.
 
-This is opt-in and requires no additional authentication; the metadata endpoint is public. Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
+This is opt-in and the metadata endpoint is public. The current Requests client may still use ambient `.netrc` credentials or a configured proxy; see [SECURITY.md](SECURITY.md#paywall-api-calls). Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
 
-**Why this matters:** If you have a paid subscription, CDP will fetch the full content of subscriber-only posts. The paywall metadata lets you build guardrails in your own workflows to avoid accidentally sharing or redistributing content that creators intended for paying subscribers only. Respect the creators whose work you value enough to pay for.
+**Why this matters:** If you have a paid subscription, CDP may fetch the full content of subscriber-only posts. The paywall metadata helps you build guardrails in your own workflows, but it does not block output or grant permission to share it. Respect the creators whose work you value enough to pay for.
 
 ## Troubleshooting
 
 ### "No CDP connection"
 - Make sure your browser launched with `--remote-debugging-port=9222`
 - Check that no other process is using port 9222
-- Try closing all Chrome/Brave windows and launching again
+- Close only the dedicated CDP-enabled browser instance and launch it again
 
 ### "Missing modules" error
 Literal
@@ -354,7 +360,7 @@ pip install .
 ### Rate limiting / bot detection
 - Increase `--sleep-ms` (default: 150ms)
 - Use smaller batches
-- Substack shouldn't rate-limit authenticated sessions, but YMMV
+- Authenticated sessions may still be rate-limited
 
 ## Advanced Options
 Literal

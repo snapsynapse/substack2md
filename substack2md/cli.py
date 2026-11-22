@@ -309,7 +309,7 @@ def process_from_md(
 
 def main():
     ap = argparse.ArgumentParser(
-        description="Convert Substack posts to Markdown using your logged-in Brave/Chrome session via CDP.",
+        description="Capture Substack posts with a logged-in Brave/Chrome session or clean exported Markdown.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Environment variables:
@@ -347,8 +347,8 @@ Environment variables:
     ap.add_argument(
         "--detect-paywall",
         action="store_true",
-        help="Query Substack API to add is_paid/audience to frontmatter. "
-        "Helps avoid accidentally sharing subscriber-only content.",
+        help="Query Substack API to add is_paid/audience metadata to frontmatter. "
+        "Does not block export.",
     )
     ap.add_argument(
         "--log-level",
@@ -367,7 +367,7 @@ Environment variables:
         "--no-resume",
         action="store_true",
         help="Disable URL-completion state file. By default substack2md "
-        "records each successfully written URL to a .state file in "
+        "records each successfully written URL to .substack2md-state in "
         "the output tree and skips already-completed URLs on the "
         "next run.",
     )

@@ -6,7 +6,7 @@ The critical trust boundary is the local CDP endpoint. The operator confirmed th
 
 ## Scope and assumptions
 
-Runtime scope: `substack2md/`, `launch-browser.sh`, local archive output, optional paywall API. Build and delivery scope: `pyproject.toml`, `.github/workflows/tests.yml`, assistant guide and static docs. Tests and synthetic fixtures are evidence, not field inputs. The operator selected local use with a regular browser profile. The actual browser and version, CDP bind address, URL-list provenance, archive sync policy, and whether a default or custom profile directory is used remain unverified. Chrome 136+ may reject remote debugging of its default data directory; that limitation does not establish safe use of another regular profile. No live browser or hosted target was probed.
+Runtime scope: `substack2md/`, `launch-browser.sh`, local archive output, optional paywall API at pre-mitigation commit `c01d2aa`. File:line anchors in the original model refer to that commit. Build and delivery scope: `pyproject.toml`, `.github/workflows/tests.yml`, assistant guide and static docs. Tests and synthetic fixtures are evidence, not field inputs. The operator selected local use with a regular browser profile at the audit check-in, then confirmed a dedicated profile is acceptable for mitigation. The actual browser and version, CDP bind address, URL-list provenance, and whether a default or custom profile directory is used remain unverified. Chrome 136+ may reject remote debugging of its default data directory; that limitation does not establish safe use of another regular profile. No live browser was probed.
 
 ## System model
 
@@ -103,6 +103,8 @@ Under local, loopback-only use, a remote page cannot directly invoke the CLI, re
 These priorities depend most on whether the CDP listener is reachable beyond the operator and whether archive outputs are later shared. The operator confirmed regular-profile use, which is reflected in TM-001.
 
 The operator later confirmed that a dedicated profile is acceptable and the archive is private and local. The high rating for TM-001 remains relevant until the field setup actually uses that isolated profile and its listener is verified. TM-005 becomes lower likelihood for the stated local-only archive, but should be rechecked if output is synced or published.
+
+Documentation audit follow-up, 2026-11-22: The paywall API call supplies no explicit authentication, but the default Requests session may load matching `.netrc` credentials or use environment proxies. The API does not require credentials. Treat ambient authentication as an open implementation gap at the CLI-to-API boundary until disabled and tested.
 
 ## Focus paths for security review
 

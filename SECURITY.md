@@ -1,8 +1,10 @@
 # Security
 
+The link filtering and launcher safeguards described below are unreleased changes after v2.2.0. Check the installed release before relying on them.
+
 ## Threat model
 
-substack2md connects to a running Chrome/Brave instance via the Chrome DevTools Protocol (CDP) on `127.0.0.1:9222` by default. While connected, it can:
+URL capture connects to a running Chrome/Brave instance via the Chrome DevTools Protocol (CDP) on `127.0.0.1:9222` by default. While connected, it can:
 
 - Read the full DOM of any tab in that browser
 - Navigate to URLs using your authenticated session cookies
@@ -32,7 +34,7 @@ Captured publication HTML is untrusted input. Conversion keeps HTTP(S), mail and
 
 ## Paywall API calls
 
-When `--detect-paywall` is enabled, substack2md makes unauthenticated HTTPS calls to `https://<publication>.substack.com/api/v1/posts/<slug>`. The User-Agent is `substack2md/<version>`. No cookies, credentials, or personal data are sent. The endpoint is publicly accessible.
+When `--detect-paywall` is enabled, substack2md makes HTTPS calls to `https://<publication>.substack.com/api/v1/posts/<slug>`. The code supplies a `substack2md/<version>` User-Agent and does not explicitly attach browser cookies or authorization headers. Requests may still use local `.netrc` credentials or configured proxies by default. The request reveals the publication and post slug to Substack and any configured proxy. Treat the no-credential claim as unverified until the HTTP client explicitly disables ambient authentication.
 
 ## AI-assisted install guide
 

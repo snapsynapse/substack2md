@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
+- Neutralize unsafe link schemes and Markdown syntax from captured HTML; retain ordinary links and leave unsafe wikilink aliases as standard Markdown links. Imported Markdown remains a separate open path.
+- Make the macOS browser launcher refuse an occupied CDP port instead of terminating its listener.
+- Clarify the release boundary, paywall metadata limits, and ambient HTTP credential risk in documentation.
 - Add an immutable provenance reference to the published v2.2.0 release containing the exact assistant guide bytes.
 
 ## [2.2.0] - 2026-09-05
