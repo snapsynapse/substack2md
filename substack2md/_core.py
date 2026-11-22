@@ -247,7 +247,31 @@ def collapse_blank_lines_in_lists(md: str) -> str:
 # --------------------------
 
 
-def img_to_link(html: str) -> str:
+def _safe_markdown_href(href: str, base_url: str | None) -> str | None:
+    """Return a destination that cannot escape Markdown link syntax."""
+    href = href.strip()
+    if not href or "\\" in href or any(ord(ch) < 32 or ord(ch) == 127 for ch in href):
+        return None
+    try:
+        parts = urllib.parse.urlsplit(href)
+        if parts.scheme:
+            if parts.scheme.lower() not in {"http", "https", "mailto", "tel"}:
+                return None
+        elif href.startswith("//"):
+            href = "https:" + href
+        elif base_url:
+            href = urllib.parse.urljoin(base_url, href)
+        parts = urllib.parse.urlsplit(href)
+        if parts.scheme in {"http", "https"} and (not parts.hostname or parts.username):
+            return None
+        if parts.scheme and parts.scheme not in {"http", "https", "mailto", "tel"}:
+            return None
+    except ValueError:
+        return None
+    return urllib.parse.quote(href, safe=":/?#@!$&'*+,;=%~-._")
+
+
+def img_to_link(html: str, base_url: str | None = None) -> str:
     soup = BeautifulSoup(html, "lxml")
     for fig in soup.find_all("figure"):
         cap = fig.find("figcaption")
@@ -275,16 +299,30 @@ def img_to_link(html: str) -> str:
     for iframe in soup.find_all("iframe"):
         src = iframe.get("src") or ""
         a = soup.new_tag("a", href=src)
-        a.string = src or "embed"
+        a.string = src if _safe_markdown_href(src, base_url) else "embed"
         iframe.replace_with(a)
+    for a in soup.find_all("a"):
+        href = _safe_markdown_href(a.get("href") or "", base_url)
+        if href is None:
+            a.unwrap()
+            continue
+        a["href"] = href
+        label = a.get_text()
+        if any(ch in label for ch in "\\[]|"):
+            a.string = (
+                label.replace("\\", "\\\\")
+                .replace("[", "\\[")
+                .replace("]", "\\]")
+                .replace("|", "\\|")
+            )
     for sel in ["header", "footer", "aside"]:
         for tag in soup.find_all(sel):
             tag.decompose()
     return str(soup)
 
 
-def html_to_markdown_clean(html: str) -> str:
-    html2 = img_to_link(html)
+def html_to_markdown_clean(html: str, base_url: str | None = None) -> str:
+    html2 = img_to_link(html, base_url=base_url)
     md = md_convert(html2, strip=["script", "style"], heading_style="ATX")
     md = re.sub(r"\n{3,}", "\n\n", md)
     return md.strip() + "\n"
@@ -489,7 +527,7 @@ def extract_article_fields(url: str, html: str) -> tuple[dict, str]:
         raise ValueError("Capture does not contain a valid article (empty or error/login page)")
     if not title and not ld and soup.select_one('input[type="password"]'):
         raise ValueError("Capture contains a login form instead of an article")
-    body_md = html_to_markdown_clean(body_html)
+    body_md = html_to_markdown_clean(body_html, base_url=url)
 
     body_md = scrub_transcript_lines(body_md)
     body_md = collapse_blank_lines_in_lists(body_md)
@@ -720,9 +758,12 @@ def rewrite_internal_links(
                     name = note.resolve().relative_to(base_dir.resolve()).with_suffix("").as_posix()
                 except ValueError:
                     pass
-            internal += 1
             fragment = urllib.parse.urlsplit(original_url).fragment
             target = name + (f"#{fragment}" if fragment else "")
+            if any(ch in text + target for ch in "\\[]|\r\n"):
+                external += 1
+                return m.group(0)
+            internal += 1
             return f"[[{target}|{text}]]"
         else:
             external += 1

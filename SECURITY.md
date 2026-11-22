@@ -14,7 +14,7 @@ This is intentional and required for the tool to work. It also means the CDP end
 
 Launch your browser with the exact flags shown in the README. In particular:
 
-- `--remote-debugging-port=9222` opens the CDP port on the loopback interface only.
+- `--remote-debugging-port=9222` opens the CDP port. The documented browser setup expects a loopback listener; verify the actual bind address on your machine.
 - `--remote-allow-origins=http://127.0.0.1:9222` permits that WebSocket origin; it does not set the listening interface or authenticate clients. Keep the endpoint local and do not forward its port.
 - `--user-data-dir="$HOME/.brave-cdp-profile"` isolates the CDP-enabled profile from your main browsing profile.
 
@@ -23,6 +23,12 @@ Do not:
 - Bind CDP to `0.0.0.0` or a public interface.
 - Share the `--user-data-dir` with a browser you use for general browsing.
 - Run substack2md against an untrusted CDP endpoint on another machine.
+
+The macOS launcher refuses to replace a process already listening on port 9222. If it reports a conflict, identify and close the listener yourself before retrying. A dedicated profile is the recommended field setup, even on a personal machine; a CDP-enabled regular browsing profile can expose unrelated signed-in accounts to other local processes.
+
+## Archive content
+
+Captured publication HTML is untrusted input. Conversion keeps HTTP(S), mail and telephone links and resolves relative links against the source page. Other link schemes become plain text; link destinations are escaped for Markdown. Cross-references with unsafe Obsidian wikilink delimiters stay as ordinary Markdown links. These measures protect links created from captured HTML; they do not sanitize article prose, `--from-md` imports, or optional raw HTML sidecars. Review archive content before an agent acts on it or before sharing it, and keep `--also-save-html` off unless you need a raw capture for debugging.
 
 ## Paywall API calls
 

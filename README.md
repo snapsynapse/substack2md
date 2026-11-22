@@ -102,8 +102,8 @@ What it does:
 
 - Prefers Brave; falls back to Chrome (arch-aware on Apple Silicon).
 - Creates an isolated profile at `$HOME/.brave-cdp-profile` or `$HOME/.chrome-cdp-profile`.
-- Binds `--remote-debugging-port=9222` to loopback only and sets `--remote-allow-origins`.
-- If port 9222 is already in use, prompts before killing the existing process.
+- Starts CDP on port 9222 with the browser's loopback default and sets `--remote-allow-origins`. Verify the actual listener is local before using the profile.
+- Exits if port 9222 is occupied. Close the existing listener yourself before retrying; the launcher does not terminate it.
 - Verifies CDP is reachable after launch.
 
 Prefer to run the commands yourself? The underlying invocations are:

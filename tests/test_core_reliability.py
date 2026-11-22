@@ -25,6 +25,77 @@ def test_external_links_are_unchanged_and_internal_labels_and_fragments_survive(
     assert (internal, external) == (1, 1)
 
 
+@pytest.mark.parametrize(
+    "href",
+    [
+        "javascript:alert(1)",
+        "JaVaScRiPt:alert(1)",
+        "data:text/html,unsafe",
+        "file:///etc/passwd",
+        "obsidian://open?vault=private",
+        "\tjavascript:alert(1)",
+        "&#106;avascript&#58;alert(1)",
+        "https://user:secret@example.com/p/post",
+    ],
+)
+def test_article_conversion_neutralizes_unsafe_link_schemes(href):
+    html = f'<article><p><a href="{href}">Read this</a></p></article>'
+    result = core.html_to_markdown_clean(html)
+    assert "Read this" in result
+    assert "](" not in result
+
+
+def test_article_conversion_escapes_markdown_destination_and_relative_links():
+    html = (
+        '<article><p><a href="https://example.com/) [bad](javascript:alert(1)">'
+        'Read</a> <a href="/p/next">Next</a></p></article>'
+    )
+    result = core.html_to_markdown_clean(html, base_url="https://pub.substack.com/p/post")
+    assert "[Read](https://example.com/%29%20%5Bbad%5D%28javascript:alert%281%29)" in result
+    assert "[Next](https://pub.substack.com/p/next)" in result
+    assert "[bad](javascript:" not in result
+
+
+def test_article_conversion_prevents_wikilink_forgery_from_anchor_label(tmp_path):
+    url = "https://pub.substack.com/p/target"
+    html = f'<article><p><a href="{url}">evil]] [[secret</a></p></article>'
+    md = core.html_to_markdown_clean(html)
+    result, _, _ = core.rewrite_internal_links(md, {url: tmp_path / "target.md"})
+    assert "[[secret" not in result
+    assert "[[target|[secret" not in result
+    assert "evil" in result
+
+
+def test_rejected_embed_uri_is_not_repeated_as_link_text():
+    result = core.html_to_markdown_clean('<iframe src="obsidian://open?vault=private"></iframe>')
+    assert result == "embed\n"
+
+
+def test_legitimate_article_links_survive_sanitization():
+    html = (
+        '<article><a href="mailto:author@example.com">Email</a> '
+        '<a href="//cdn.example.com/image.jpg">Image</a> '
+        '<a href="/p/next">Next</a></article>'
+    )
+    result = core.html_to_markdown_clean(html, base_url="https://pub.substack.com/p/post")
+    assert "[Email](mailto:author@example.com)" in result
+    assert "[Image](https://cdn.example.com/image.jpg)" in result
+    assert "[Next](https://pub.substack.com/p/next)" in result
+
+
+def test_wikilink_rewrite_leaves_unsafe_alias_and_fragment_as_markdown_link(tmp_path):
+    url = "https://pub.substack.com/p/target"
+    note = tmp_path / "target.md"
+    md = f"[label|extra]({url}) [safe]({url}#part]]other)"
+    result, internal, external = core.rewrite_internal_links(md, {url: note})
+    assert result == md
+    assert (internal, external) == (0, 2)
+    unsafe_target = tmp_path / "bad]]note.md"
+    result, internal, external = core.rewrite_internal_links(f"[safe]({url})", {url: unsafe_target})
+    assert result == f"[safe]({url})"
+    assert (internal, external) == (0, 1)
+
+
 def test_short_article_and_trailing_slash_are_valid():
     fields, body = core.extract_article_fields(
         "https://pub.substack.com/p/original-slug/",

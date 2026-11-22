@@ -37,20 +37,13 @@ echo "Port: $PORT"
 echo "Profile: $PROFILE_DIR"
 echo ""
 
-# Check if port is already in use
-if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-    echo "WARNING: Port $PORT is already in use"
-    echo "If you have a browser already running with CDP, you can skip this step."
-    echo ""
-    read -p "Kill existing process and continue? (y/N) " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        kill $(lsof -t -i:$PORT) 2>/dev/null || true
-        sleep 2
-    else
-        echo "Exiting. Use the existing browser or close it first."
-        exit 0
-    fi
+# A listener may belong to another browser profile or another application.
+# Never terminate it or silently connect to it.
+if lsof -nP -iTCP:$PORT -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "ERROR: Port $PORT is already in use."
+    lsof -nP -iTCP:$PORT -sTCP:LISTEN || true
+    echo "Close that listener yourself, then rerun this launcher."
+    exit 1
 fi
 
 # Launch browser
