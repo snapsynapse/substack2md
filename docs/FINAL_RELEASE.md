@@ -1,6 +1,6 @@
-# Final-release preparation
+# Final release record
 
-Prepared: 2026-11-22 America/Denver. Scope: this repository only. Candidate: v3.0.0, requiring Python >=3.11.5. Latest published release: [v2.2.1](https://github.com/snapsynapse/substack2md/releases/tag/v2.2.1), commit `f876cf8`.
+Release date: 2026-11-22 America/Denver. Scope: this repository only. Version: v3.0.0, requiring Python >=3.11.5. [GitHub Release](https://github.com/snapsynapse/substack2md/releases/tag/v3.0.0) owns publication timestamps and downloadable artifacts.
 
 ## Lifecycle decision
 
@@ -12,12 +12,12 @@ Owner decision, November 22, 2026: v3.0.0 is the last planned release. Critical 
 |---|---|---|
 | GitHub issues and pull requests | Closed queue | Live check on November 22 returned no issues and no open PRs. PRs 1 and 2 are merged; PR 3 is closed. |
 | Captured HTML links and wikilinks | Shipped in v2.2.1 | Synthetic unsafe-scheme, delimiter and legitimate-link checks pass. Renderer execution remains untested. |
-| Ambient paywall authentication | Implemented in candidate | Fresh session disables trust_env and redirects; regression uses matching netrc plus a redirect response and confirms no Authorization/Cookie headers. |
-| Capture resources | Implemented in candidate | Early DOM byte check, 8 MiB check before parsing, at most 8 CLI workers. No claim of a browser memory sandbox or parser wall-clock deadline. |
-| Private URL logs | Implemented in candidate | CLI success/failure logs omit URLs and raw transport messages. HTTP debug logging is suppressed. Caller-controlled library logging and returned error objects remain private data. |
-| URL admission | Implemented in candidate | HTTPS, no credentials/nonstandard ports/literal IP targets; Substack /p paths, custom publication paths preserved. DNS and browser redirects are not network-isolated. |
-| Dependencies and CI | Implemented and locally verified | Raised direct/transitive security floors, tested runtime constraints, immutable official action SHAs, contents-read-only CI, dependency audit job. Python 3.11.5, 3.12.16, 3.13.18 and 3.14 pass locally. CI now covers 3.11.5 and latest 3.11 through 3.14. Exact-candidate hosted CI remains pending. |
-| Mac launcher process ownership | Shipped in v2.2.1 | Refuses an occupied port. Candidate also removes blanket advice to close unrelated browser windows. |
+| Ambient paywall authentication | Included in v3.0.0 | Fresh session disables trust_env and redirects; regression uses matching netrc plus a redirect response and confirms no Authorization/Cookie headers. |
+| Capture resources | Included in v3.0.0 | Early DOM byte check, 8 MiB check before parsing, at most 8 CLI workers. No claim of a browser memory sandbox or parser wall-clock deadline. |
+| Private URL logs | Included in v3.0.0 | CLI success/failure logs omit URLs and raw transport messages. HTTP debug logging is suppressed. Caller-controlled library logging and returned error objects remain private data. |
+| URL admission | Included in v3.0.0 | HTTPS, no credentials/nonstandard ports/literal IP targets; Substack /p paths, custom publication paths preserved. DNS and browser redirects are not network-isolated. |
+| Dependencies and CI | Implemented and locally verified | Raised direct/transitive security floors, tested runtime constraints, immutable official action SHAs, contents-read-only CI, dependency audit job. Python 3.11.5, 3.12.16, 3.13.18 and 3.14 pass locally. CI now covers 3.11.5 and latest 3.11 through 3.14. Runtime candidate `8bcab90` passed [all five hosted jobs](https://github.com/snapsynapse/substack2md/actions/runs/45094839277); Python 3.11.5 uses Ubuntu 24.04 because setup-python has no build for Ubuntu 26.04. The publication commit must pass the same exact-head checks before tagging. |
+| Mac launcher process ownership | Shipped in v2.2.1 | Refuses an occupied port. Version 3.0.0 also removes blanket advice to close unrelated browser windows. |
 | Imported Markdown | Explicit trust boundary | Keep content-preserving cleanup. Imported text, code examples and raw HTML are operator-selected untrusted data, not sanitized documents. Drop a universal Markdown sanitizer from this product's roadmap. |
 | HTML sidecar retention | Operator responsibility | Off by default; private archive confirmed. No automatic deletion or retention daemon. Captured HTML can be active content when opened. |
 | Public/team publishing guardrails | Out of scope | Owner confirmed private local archive. Paywall metadata never grants sharing rights or blocks output. Do not add a publishing product. |
@@ -27,13 +27,13 @@ Owner decision, November 22, 2026: v3.0.0 is the last planned release. Critical 
 | Homebrew | Separate delivery follow-up | Tap is separately owned and was not changed here. Final release preparation does not assert its version or installation result. |
 | Standards expansion | No runtime expansion | Keep unresolved applicability explicit. Related-standard links and local guide hashes are not conformance evidence. |
 | Search-console work | Excluded | No search submission or ranking outcome is required to deliver this CLI. Existing provider state remains unassessed. |
-| Hosted assessments and browser acceptance | Partly verified | Siteline pre-delivery assessment and local GuideCheck Level 3 verification completed; authenticated capture and rendered accessibility remain unobserved. Post-deployment verification must use deployed candidate bytes. |
+| Hosted assessments and browser acceptance | Partly verified | Siteline pre-delivery assessment and local GuideCheck Level 3 verification completed; authenticated capture and rendered accessibility remain unobserved. Candidate deployment bytes matched source; hosted GuideCheck reached Level 3, with the two header warnings described below. |
 
 ## Security audit disposition
 
 The [original audit](security/audits/audit-2026-11-22.md) is a dated baseline at `c01d2aa`, not a claim that its original findings remain unchanged.
 
-| Finding | Candidate disposition |
+| Finding | Release disposition |
 |---|---|
 | SEC-001 | HTML link generation mitigated in v2.2.1; imported Markdown has an explicit untrusted-input boundary rather than a universal sanitizer. |
 | SEC-002 | Generated-link delimiter handling mitigated in v2.2.1. |
@@ -62,18 +62,20 @@ These items may be considered after v3.0.0; they do not hold this release or pro
 | Gate | State and evidence |
 |---|---|
 | Version and support decision | Settled: v3.0.0, Python >=3.11.5, last planned release; critical security and breakage fixes until retirement. |
-| Source and guide integrity | Local version/copy/hash checks pass. Guide 1.0.3 targets 3.0.x; its planned v3.0.0 provenance URL is not published yet. |
+| Source and guide integrity | Local version/copy/hash checks pass. Guide 1.0.3 targets 3.0.x; its immutable provenance reference names the v3.0.0 release. |
 | Offline checks | 160 tests pass with one opt-in API skip on each of Python 3.11.5, 3.12.16, 3.13.18 and 3.14; the API test separately passes. Final artifact identity is recorded in the local preparation receipt. Ruff 0.16.1, shell syntax and whitespace checks pass. |
 | Public API | Public Substack metadata fixture passed on Python 3.11.5. No subscriber content or browser session used. |
 | Dependency audit | Fresh minimum-version environment: 26 distributions audited, zero known advisories. Constraints record tested versions, not package hashes. The minimum-version bootstrap initially exposed setuptools 65.5.0 (nine raw advisory records, five distinct IDs); installation guidance, CI, wheel smoke and the isolated build floor now require setuptools >=84.1.0. |
-| GuideCheck | Reference verifier at evaluator commit d64f269befb3a561ce570c7688f6ee965ae18c4b, version 0.7.1, explicitly selected profile 0.3.0: Level 3, no blocking findings or warnings. Local guide SHA-256: 5db67193bdf5c9fc7bb8ea302b08dfb2d6c663c905b6f61edc3191fd32f65590. This is local evaluation, not hosted acceptance or publisher provenance. |
+| GuideCheck | Reference verifier at evaluator commit d64f269befb3a561ce570c7688f6ee965ae18c4b, version 0.7.1, explicitly selected profile 0.3.0: Level 3, no blocking findings or warnings. Local guide SHA-256: 5db67193bdf5c9fc7bb8ea302b08dfb2d6c663c905b6f61edc3191fd32f65590. Hosted evaluation of the identical guide bytes also reached Level 3, with no blockers and two nonblocking warnings for missing nosniff and HSTS headers. GitHub Pages does not apply docs/_headers. These warnings remain open; neither result establishes publisher provenance. |
 | Siteline before delivery | Completed against the published v2.2.1 site on 2026-11-23T00:46:01.628Z (November 22 locally). Stored result substack2md-space-v2-34fd9020193fe0e14ec4a489-20261123, scanner 2.1.2, rubric 2.4.0: D/63. All nine reported checks pass; all five ranked findings are passing opportunities. The low grade is retained as reported, not converted to a target defect. No missing commerce features are added to this CLI documentation site. Passive guide screening is not full GuideCheck; absent Graceful Boundaries evidence is informational. No candidate deployment acceptance is inferred. |
 | Packed artifact | Wheel and sdist built; metadata, source membership and package bytes match the candidate. Clean wheel consumers pass both entry points, expected failures and offline conversion on Python 3.11.5 and 3.14. The installer rejects Python 3.11.4. The Unix smoke environment uses symlinks, matching the venv CLI and preserving standalone macOS Python shared-library lookup. Final hashes and working-tree fingerprint are in the local preparation receipt. |
-| Rendered accessibility | Pending Comet availability. No axe/WCAG result or keyboard/device acceptance is claimed. No browser-policy exception or alternate controller is assumed. |
-| Dedicated-profile capture | Pending human-gated browser acceptance. Verify a public post and a custom publication domain, output, failure behavior and dedicated loopback profile without retaining private content. Offline CDP fixtures do not establish this gate. |
-| Delivery | Await explicit v3.0.0 commit/push/publication authority. Pushing main deploys Pages. Verify signed commit, exact-commit five-job CI, signed tag and assets/checksums before declaring delivery. Recheck deployed website/guide bytes and hosted assessments after deployment. |
-| Homebrew | Separate tap update and installation check after the GitHub release exists; no claim that the current formula contains this candidate. |
+| Rendered accessibility | Pending at publication by explicit owner decision. No axe/WCAG result or keyboard/device acceptance is claimed. |
+| Dedicated-profile capture | Pending at publication by explicit owner decision. Verify a public post and a custom publication domain, output, failure behavior and dedicated loopback profile without retaining private content. Offline CDP fixtures do not establish this gate. |
+| Delivery | Owner authorized v3.0.0 tagging and publication with browser gates pending and header warnings disclosed. Runtime candidate `8bcab90` has signed-commit verification, green CI, [successful Pages deployment](https://github.com/snapsynapse/substack2md/actions/runs/45094839182), eleven live route/byte checks and hosted assessments. Recheck the publication commit, signed tag, deployed bytes and downloaded assets before declaring delivery; GitHub Actions and the release identify the final immutable evidence. |
+| Renderer execution | Pending at publication. Synthetic link regressions do not establish behavior in an actual Markdown renderer. |
+| Known hosted headers | The served guide lacks X-Content-Type-Options: nosniff and Strict-Transport-Security. Both are nonblocking hosted GuideCheck warnings and remain open; GitHub Pages ignores docs/_headers. |
+| Homebrew | Separate tap update and installation check after the GitHub release exists; no claim that the current formula contains v3.0.0. |
 
-This document replaces the processed repository-state handoff. Historical release preparation remains in `RELEASE_READINESS.md`; it is not an active queue. No final commit, tag or release has been published.
+This document replaces the processed repository-state handoff. Historical release preparation remains in `RELEASE_READINESS.md`; it is not an active queue. The owner explicitly authorized publication while the browser gates above remain pending. This is a release exception, not a claim that those checks passed. [Release notes](releases/v3.0.0.md) retain the pending checks and known hosted-header warnings.
 
-The baseline scanner run `20261122T235432Z-81cb08` had intact collectors and found missing ignore families plus the retained handoff; those local repairs are made. Standards declaration intake now validates with jsonschema installed in the temporary tooling environment. Semantic conformance and unresolved applicability remain unassessed. Search-console activity remains excluded. The preparation scanner run `20261123T005059Z-7cf607` has intact collectors: handoffs and baseline ignore families pass; the working tree is intentionally dirty, semantic standards/search/accuracy remain unknown, and its green CI belongs to the published base rather than the candidate. It is not a final-release acceptance result.
+The baseline scanner run `20261122T235432Z-81cb08` had intact collectors and found missing ignore families plus the retained handoff; those local repairs are made. Standards declaration intake now validates with jsonschema installed in the temporary tooling environment. Semantic conformance and unresolved applicability remain unassessed. Search-console activity remains excluded. The preparation scanner run `20261123T005059Z-7cf607` has intact collectors: handoffs and baseline ignore families pass; the working tree was dirty at preparation, semantic standards/search/accuracy were unknown, and its green CI belonged to the published base rather than the candidate. The post-candidate run `20261123T013051Z-b7a3d0` had intact collectors with clean, metadata, CI and handoffs passing; semantic standards/search/accuracy remained unknown. Neither scanner is full conformance evidence.

@@ -35,7 +35,7 @@ The handoff's account-level prerequisite pointer is stale: the old profile hando
 
 Local signature verification currently requires an explicitly trusted allowed-signers file: `gpg.ssh.allowedSignersFile` is not configured in this checkout. Resolve that verification input from the approved convention at delivery time, without changing global configuration or exposing key material. This does not negate GitHub's verified test-commit evidence.
 
-The signing handoff criteria were met by v2.2.1 on November 22, 2026: commit `f876cf8` and annotated signed tag `v2.2.1` were verified locally and by GitHub. [Release evidence](https://github.com/snapsynapse/substack2md/releases/tag/v2.2.1) includes exact-commit CI and checksums; the downloaded wheel passed the clean consumer smoke check. The older unsigned baseline and public tags remain unchanged. [FINAL_RELEASE.md](FINAL_RELEASE.md) owns the current candidate queue.
+The signing handoff criteria were met by v2.2.1 on November 22, 2026: commit `f876cf8` and annotated signed tag `v2.2.1` were verified locally and by GitHub. [Release evidence](https://github.com/snapsynapse/substack2md/releases/tag/v2.2.1) includes exact-commit CI and checksums; the downloaded wheel passed the clean consumer smoke check. The older unsigned baseline and public tags remain unchanged. [FINAL_RELEASE.md](FINAL_RELEASE.md) owns the release disposition and remaining acceptance queue.
 
 ## Historical contribution review
 

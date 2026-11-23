@@ -34,9 +34,9 @@ Captured publication HTML is untrusted input. Conversion keeps HTTP(S), mail and
 
 ## Paywall API calls
 
-In the final-release candidate, `--detect-paywall` uses a fresh Requests session with `trust_env=False` and redirects disabled. It sends no browser cookies and does not load `.netrc` credentials, environment proxies or ambient certificate overrides. The request still reveals the publication and post slug to Substack. Non-200 responses, including redirects, leave paywall status unknown.
+In v3.0.0, `--detect-paywall` uses a fresh Requests session with `trust_env=False` and redirects disabled. It sends no browser cookies and does not load `.netrc` credentials, environment proxies or ambient certificate overrides. The request still reveals the publication and post slug to Substack. Non-200 responses, including redirects, leave paywall status unknown.
 
-The candidate accepts HTTPS publication URLs with no embedded credentials or nonstandard ports. Substack URLs must use `/p/slug`; custom domains can retain their own post paths. Literal IP targets and common internal suffixes are rejected. The browser may follow redirects or resolve public-looking names to private addresses, so this is input validation, not a network sandbox. Only operator-selected publication URLs belong in the input list.
+Version 3.0.0 accepts HTTPS publication URLs with no embedded credentials or nonstandard ports. Substack URLs must use `/p/slug`; custom domains can retain their own post paths. Literal IP targets and common internal suffixes are rejected. The browser may follow redirects or resolve public-looking names to private addresses, so this is input validation, not a network sandbox. Only operator-selected publication URLs belong in the input list.
 
 Captured HTML is limited to 8 MiB before Python parsing, with an early browser-side size check. CLI concurrency is limited to 8. These are resource bounds, not a process memory limit or a parser wall-clock deadline. Article URLs and raw transport exception messages are omitted from CLI progress and failure logs. Library callers control their own logging and must protect returned error detail.
 

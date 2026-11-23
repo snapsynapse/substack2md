@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [3.0.0] - Unreleased
+## [3.0.0] - 2026-11-22
 
 ### Breaking changes
 
@@ -21,6 +21,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Bound captured HTML to 8 MiB and CLI concurrency to 8; redact CLI URL logs.
 - Raise dependency and build-tool floors, upgrade obsolete bundled installer tools, provide tested runtime constraints, pin CI action SHAs and audit dependencies in CI.
 - Reconcile final-release open loops and preserve explicit trust and acceptance limits.
+
+### Known limitations
+
+- Publish with dedicated-profile browser capture, rendered accessibility and renderer-execution acceptance still pending, as authorized by the maintainer.
+- Retain the hosted guide warnings for missing `X-Content-Type-Options: nosniff` and HSTS on GitHub Pages.
 
 ## [2.2.1] - 2026-11-22
 
@@ -149,7 +154,8 @@ Major release. Restructures the project from a single-file script into an instal
 
 First tagged reference point. CDP-driven Substack-to-markdown converter with Obsidian wikilink rewriting, publication mapping, transcript cleanup, and batch URL file support.
 
-[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v2.2.1...HEAD
+[Unreleased]: https://github.com/snapsynapse/substack2md/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/snapsynapse/substack2md/compare/v2.2.1...v3.0.0
 [2.2.1]: https://github.com/snapsynapse/substack2md/compare/v2.2.0...v2.2.1
 [2.2.0]: https://github.com/snapsynapse/substack2md/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/snapsynapse/substack2md/compare/v2.1.1...v2.1.2

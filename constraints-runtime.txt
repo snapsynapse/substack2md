@@ -1,4 +1,4 @@
-# Tested runtime versions for the final release candidate, 2026-11-22.
+# Tested runtime versions for v3.0.0, 2026-11-22.
 # Apply with python -m pip install -c constraints-runtime.txt .
 beautifulsoup4==4.15.0
 certifi==2026.11.20

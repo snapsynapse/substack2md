@@ -2,7 +2,7 @@
 
 Convert Substack posts to clean, Obsidian-friendly Markdown using your authenticated browser session.
 
-This documentation describes candidate version 3.0.0, which is not published. The latest published release is v2.2.1. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
+This documentation describes version 3.0.0. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
 
 Version 2.2.1 introduced link-safety and macOS launcher changes. Earlier v2.2.0 artifacts do not include those safeguards.
 
@@ -27,7 +27,7 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 
 ## Installation
 
-Requires Python 3.11.5 or newer. The v3.0.0 candidate is the last planned release; critical security and breakage fixes remain in scope until retirement is announced. Optional maintenance work may be considered before then. The repository is not retired.
+Requires Python 3.11.5 or newer. Version 3.0.0 is the last planned release; critical security and breakage fixes remain in scope until retirement is announced. Optional maintenance work may be considered before then. The repository is not retired.
 
 Homebrew (macOS and Linux):
 Literal
@@ -85,9 +85,11 @@ pip install -c constraints-runtime.txt -e ".[dev]"
 ```
 Installing registers a `substack2md` console script on your PATH. You can also invoke the package as a module: `python -m substack2md`.
 
-## Final-release candidate
+## Version 3.0.0 safeguards
 
-The v3.0.0 candidate raises the Python minimum to 3.11.5, requires HTTPS publication URLs and a loopback CDP host, limits concurrency to 8 and captured HTML to 8 MiB, and omits article URLs from CLI logs. Custom publication domains retain their existing post paths. Browser navigation can still follow redirects and use DNS; URL checks are not a network sandbox. See [the final-release disposition](docs/FINAL_RELEASE.md) for remaining acceptance and deliberate exclusions.
+Version 3.0.0 raises the Python minimum to 3.11.5, requires HTTPS publication URLs and a loopback CDP host, limits concurrency to 8 and captured HTML to 8 MiB, and omits article URLs from CLI logs. Custom publication domains retain their existing post paths. Browser navigation can still follow redirects and use DNS; URL checks are not a network sandbox. See [the final-release disposition](docs/FINAL_RELEASE.md) for remaining acceptance and deliberate exclusions.
+
+Browser capture, rendered accessibility and renderer-execution acceptance remain pending for v3.0.0. Hosted GuideCheck reaches Level 3 with two nonblocking header warnings (missing `nosniff` and HSTS on GitHub Pages). See [the release notes](docs/releases/v3.0.0.md) for the documented release limits.
 
 ## Quick Start
 
@@ -344,7 +346,7 @@ When `--detect-paywall` is passed, substack2md queries Substack's public API to 
 
 If Substack returns an unrecognized audience value (a new tier), `audience` is preserved verbatim and `is_paid` is set to `null` so downstream workflows treat the post as "status unknown" rather than silently classifying it as free. On API failure (non-200, timeout, non-JSON) both fields are `null` and the pipeline continues.
 
-This is opt-in and the metadata endpoint is public. The final-release candidate disables ambient `.netrc` authentication, environment proxies and metadata redirects; see [SECURITY.md](SECURITY.md#paywall-api-calls). Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
+This is opt-in and the metadata endpoint is public. Version 3.0.0 disables ambient `.netrc` authentication, environment proxies and metadata redirects; see [SECURITY.md](SECURITY.md#paywall-api-calls). Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
 
 **Why this matters:** If you have a paid subscription, CDP may fetch the full content of subscriber-only posts. The paywall metadata helps you build guardrails in your own workflows, but it does not block output or grant permission to share it. Respect the creators whose work you value enough to pay for.
 
