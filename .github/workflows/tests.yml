@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
+    # setup-python has a 3.11.5 build for Ubuntu 24.04, but not 26.04.
+    runs-on: ${{ matrix.python-version == '3.11.5' && 'ubuntu-24.04' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
