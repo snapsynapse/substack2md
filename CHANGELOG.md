@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [3.0.0] - Unreleased
+
+### Breaking changes
+
+- Require Python 3.11.5 or newer; Python 3.10 and earlier 3.11 patches are no longer supported.
+- Require HTTPS post URLs and a loopback CLI CDP host. Custom publication paths remain supported.
+- Reject CLI concurrency above 8 and captured HTML above 8 MiB.
+
+### Security
+
+- Disable ambient HTTP authentication and metadata redirects for public paywall requests.
+- Require HTTPS post URLs and loopback CLI CDP hosts; retain custom-domain paths.
+- Bound captured HTML to 8 MiB and CLI concurrency to 8; redact CLI URL logs.
+- Raise dependency and build-tool floors, upgrade obsolete bundled installer tools, provide tested runtime constraints, pin CI action SHAs and audit dependencies in CI.
+- Reconcile final-release open loops and preserve explicit trust and acceptance limits.
+
 ## [2.2.1] - 2026-11-22
 
 ### Fixed

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=77.0.3", "wheel"]
+requires = ["setuptools>=84.1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "substack2md"
 dynamic = ["version"]
 description = "Convert Substack posts to clean, Obsidian-friendly Markdown using your authenticated browser session."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11.5"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [
@@ -19,21 +19,26 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Text Processing :: Markup :: Markdown",
     "Topic :: Utilities",
 ]
 dependencies = [
-    "websocket-client>=1.6.0",
-    "beautifulsoup4>=4.12.0",
-    "lxml>=4.9.0",
+    "websocket-client>=1.9.2",
+    "beautifulsoup4>=4.15.0",
+    "lxml>=6.1.3",
     "readability-lxml>=0.8.1",
-    "markdownify>=0.11.0",
-    "pyyaml>=6.0",
-    "requests>=2.31.0",
+    "markdownify>=1.2.4",
+    "pyyaml>=6.0.4",
+    "requests>=2.34.2",
+    "certifi>=2026.10.19",
+    "idna>=3.15",
+    "urllib3>=2.8.0",
+    "lxml-html-clean>=0.4.6",
+    "soupsieve>=4.1.3",
 ]
 
 [project.optional-dependencies]
@@ -73,7 +78,7 @@ filterwarnings = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 extend-exclude = [".venv", "build", "dist", ".claude", "*.md"]
 
 [tool.ruff.lint]

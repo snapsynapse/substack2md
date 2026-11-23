@@ -34,7 +34,11 @@ Captured publication HTML is untrusted input. Conversion keeps HTTP(S), mail and
 
 ## Paywall API calls
 
-When `--detect-paywall` is enabled, substack2md makes HTTPS calls to `https://<publication>.substack.com/api/v1/posts/<slug>`. The code supplies a `substack2md/<version>` User-Agent and does not explicitly attach browser cookies or authorization headers. Requests may still use local `.netrc` credentials or configured proxies by default. The request reveals the publication and post slug to Substack and any configured proxy. Treat the no-credential claim as unverified until the HTTP client explicitly disables ambient authentication.
+In the final-release candidate, `--detect-paywall` uses a fresh Requests session with `trust_env=False` and redirects disabled. It sends no browser cookies and does not load `.netrc` credentials, environment proxies or ambient certificate overrides. The request still reveals the publication and post slug to Substack. Non-200 responses, including redirects, leave paywall status unknown.
+
+The candidate accepts HTTPS publication URLs with no embedded credentials or nonstandard ports. Substack URLs must use `/p/slug`; custom domains can retain their own post paths. Literal IP targets and common internal suffixes are rejected. The browser may follow redirects or resolve public-looking names to private addresses, so this is input validation, not a network sandbox. Only operator-selected publication URLs belong in the input list.
+
+Captured HTML is limited to 8 MiB before Python parsing, with an early browser-side size check. CLI concurrency is limited to 8. These are resource bounds, not a process memory limit or a parser wall-clock deadline. Article URLs and raw transport exception messages are omitted from CLI progress and failure logs. Library callers control their own logging and must protect returned error detail.
 
 ## AI-assisted install guide
 

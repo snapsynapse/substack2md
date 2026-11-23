@@ -10,7 +10,7 @@ PAGES_GUIDE = ROOT / "docs" / ".well-known" / "assistant-guide.txt"
 MANIFEST = ROOT / "assistant-guide-manifest.txt"
 PAGES_MANIFEST = ROOT / "docs" / ".well-known" / "assistant-guide-manifest.txt"
 PAGES_HEADERS = ROOT / "docs" / "_headers"
-IMMUTABLE_RELEASE_URL = "https://github.com/snapsynapse/substack2md/releases/tag/v2.2.0"
+IMMUTABLE_RELEASE_URL = "https://github.com/snapsynapse/substack2md/releases/tag/v3.0.0"
 
 
 def _metadata(text: str) -> dict[str, str]:
@@ -128,7 +128,7 @@ def test_assistant_guide_manifest_matches_bytes():
     "invalid_manifest",
     [
         lambda text: text.replace(f"immutable-release-url: {IMMUTABLE_RELEASE_URL}\n", ""),
-        lambda text: text.replace("/v2.2.0\n", "/v2.1.2\n"),
+        lambda text: text.replace("/v3.0.0\n", "/v2.1.2\n"),
         lambda text: text.replace("immutable-release-url: ", "immutable-release-url="),
         lambda text: text + f"immutable-release-url: {IMMUTABLE_RELEASE_URL}\n",
     ],

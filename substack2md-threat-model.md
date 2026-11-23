@@ -121,3 +121,7 @@ Documentation audit follow-up, 2026-11-22: The paywall API call supplies no expl
 ## Quality check and open questions
 
 All discovered runtime input paths, the CDP boundary, the archive-reader boundary, and the optional API are represented above. Runtime and build/CI threats are distinct. The operator's regular-profile answer is incorporated. To refine priority, verify the actual browser/version and CDP listener, whether the regular profile is the default data directory, URL-list provenance, and whether archive output enters a public sync or publishing workflow.
+
+## Final-release candidate
+
+See [the disposition](docs/FINAL_RELEASE.md) for current mitigation status and explicit residuals. Ambient metadata authentication and redirect handling are fixed in the local candidate; input/resource limits and CLI log redaction are added. Browser navigation remains privileged and can follow redirects. Private operator-selected Markdown and HTML remain untrusted content. The original model above describes the original audit baseline.

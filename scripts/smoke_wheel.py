@@ -18,7 +18,9 @@ def main():
     with tempfile.TemporaryDirectory(prefix="substack2md-wheel-") as temporary:
         root = Path(temporary)
         environment = root / "venv"
-        venv.EnvBuilder(with_pip=True).create(environment)
+        # Match the Unix venv CLI default. Copying standalone macOS Python
+        # executables can detach them from their relative shared library.
+        venv.EnvBuilder(with_pip=True, symlinks=os.name != "nt").create(environment)
         binaries = environment / ("Scripts" if os.name == "nt" else "bin")
         python = binaries / ("python.exe" if os.name == "nt" else "python")
         command = binaries / ("substack2md.exe" if os.name == "nt" else "substack2md")
@@ -32,6 +34,7 @@ def main():
                 [str(argument) for argument in arguments], cwd=root, env=env, **options
             )
 
+        run(python, "-m", "pip", "install", "--upgrade", "pip", "setuptools>=84.1.0", check=True)
         run(python, "-m", "pip", "install", wheel, check=True)
         run(
             python,

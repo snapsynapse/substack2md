@@ -1,40 +1,4 @@
-"""
-Evals for fetch_paywall_status() introduced in PR #1
-(feat: --detect-paywall, branch drewid74:feat/paywall-detection).
-
-These tests map to concrete merge-blocking questions:
-
-  A. Audience decoding correctness
-     - "only_paid"  -> is_paid True
-     - "everyone"   -> is_paid False
-     - "only_free"  -> is_paid False
-     - "founding"   -> is_paid ??  (SUSPECTED BUG: currently returns False;
-                                   founding-tier posts are paywalled in
-                                   practice, so tagging them is_paid=False
-                                   would defeat the feature's stated goal
-                                   of "avoid accidentally sharing paid
-                                   content".)
-
-  B. Unknown / missing audience field
-     - 200 OK but no audience key  -> current code defaults audience to
-       "everyone" and is_paid to False.  That silently claims the post is
-       free when we actually don't know.  Expected behavior per the PR
-       description ("graceful fallback to null") would be is_paid=None,
-       audience=None when the signal is absent.
-
-  C. Graceful-failure contract
-     - 404 / 500 / timeout / non-JSON body -> is_paid=None, audience=None
-     - Never raises; never blocks the pipeline.
-
-  D. Request shape
-     - Hits https://{publication}.substack.com/api/v1/posts/{slug}
-     - Sends Accept: application/json and a User-Agent
-     - Has a finite timeout (the PR hardcodes 10s -- flagged below)
-
-Run:
-    pip install pytest responses
-    pytest tests/test_paywall_fetch.py -v
-"""
+"""Offline regressions for audience decoding, anonymous requests and unknown status."""
 
 import json
 
@@ -89,16 +53,7 @@ def test_only_free_marks_is_paid_false():
 
 @responses.activate
 def test_founding_tier_is_paid_behavior():
-    """
-    Substack also exposes 'founding' audience for founding-member-only posts.
-    These ARE paid.  Current impl returns is_paid=False because it only
-    matches 'only_paid' exactly.  This test will FAIL against the current
-    PR -- that is the point.  If maintainers agree it's a bug, fix by
-    widening the check, e.g.:
-
-        paid_audiences = {"only_paid", "founding"}
-        result["is_paid"] = data.get("audience") in paid_audiences
-    """
+    """Founding-member posts require paid access."""
     responses.add(responses.GET, API_URL, json={"audience": "founding"}, status=200)
     out = substack2md.fetch_paywall_status(PUB, SLUG)
     assert out["audience"] == "founding"
@@ -115,15 +70,7 @@ def test_founding_tier_is_paid_behavior():
 
 @responses.activate
 def test_missing_audience_key_should_return_unknown():
-    """
-    PR description promises 'graceful fallback to null on API errors'.
-    When the API returns 200 but without the audience field, we also
-    don't know the status.  Current impl defaults audience='everyone'
-    and is_paid=False, which is a false negative.
-
-    Expected: both fields None so downstream code can treat it as
-    'not checked' and avoid drawing conclusions.
-    """
+    """Absent audience metadata remains unknown, including on HTTP 200."""
     responses.add(responses.GET, API_URL, json={"title": "no audience key"}, status=200)
     out = substack2md.fetch_paywall_status(PUB, SLUG)
     assert out["is_paid"] is None, (
@@ -190,12 +137,12 @@ def test_connection_error_returns_none_none():
 
 
 def test_never_raises_on_network_failure(monkeypatch):
-    """Even if requests.get itself blows up, caller must not see an exception."""
+    """Even if the HTTP session itself fails, caller must not see an exception."""
 
     def boom(*args, **kwargs):
         raise RuntimeError("unexpected transport failure")
 
-    monkeypatch.setattr(substack2md.requests, "get", boom)
+    monkeypatch.setattr(substack2md.requests.Session, "get", boom)
     out = substack2md.fetch_paywall_status(PUB, SLUG)
     assert out == {"is_paid": None, "audience": None}
 
@@ -232,7 +179,7 @@ def test_timeout_default_is_finite(monkeypatch):
     """Default timeout must be finite so a single slow API call can't stall a batch."""
     seen = {}
 
-    def fake_get(url, headers=None, timeout=None):
+    def fake_get(self, url, headers=None, timeout=None, **kwargs):
         seen["timeout"] = timeout
 
         class R:
@@ -243,17 +190,17 @@ def test_timeout_default_is_finite(monkeypatch):
 
         return R()
 
-    monkeypatch.setattr(substack2md.requests, "get", fake_get)
+    monkeypatch.setattr(substack2md.requests.Session, "get", fake_get)
     substack2md.fetch_paywall_status(PUB, SLUG)
     assert seen["timeout"] is not None
     assert 0 < seen["timeout"] < 120
 
 
 def test_timeout_parameter_is_threaded_through(monkeypatch):
-    """Explicit timeout arg must reach requests.get unchanged."""
+    """Explicit timeout reaches the anonymous session unchanged."""
     seen = {}
 
-    def fake_get(url, headers=None, timeout=None):
+    def fake_get(self, url, headers=None, timeout=None, **kwargs):
         seen["timeout"] = timeout
 
         class R:
@@ -264,6 +211,6 @@ def test_timeout_parameter_is_threaded_through(monkeypatch):
 
         return R()
 
-    monkeypatch.setattr(substack2md.requests, "get", fake_get)
+    monkeypatch.setattr(substack2md.requests.Session, "get", fake_get)
     substack2md.fetch_paywall_status(PUB, SLUG, timeout=3.5)
     assert seen["timeout"] == 3.5

@@ -2,9 +2,9 @@
 
 Convert Substack posts to clean, Obsidian-friendly Markdown using your authenticated browser session.
 
-This documentation describes version 2.2.1. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
+This documentation describes candidate version 3.0.0, which is not published. The latest published release is v2.2.1. Check [GitHub Releases](https://github.com/snapsynapse/substack2md/releases) for published artifacts; local source changes do not establish publication. See [CHANGELOG.md](CHANGELOG.md) for version history and [docs/MAINTENANCE.md](docs/MAINTENANCE.md) for release gates.
 
-Version 2.2.1 includes link-safety and macOS launcher changes. Earlier v2.2.0 artifacts do not include those safeguards.
+Version 2.2.1 introduced link-safety and macOS launcher changes. Earlier v2.2.0 artifacts do not include those safeguards.
 
 ## Why This Exists
 
@@ -27,6 +27,8 @@ Substack doesn't let you bulk-export your reading list or subscriptions in a use
 
 ## Installation
 
+Requires Python 3.11.5 or newer. The v3.0.0 candidate is the last planned release; critical security and breakage fixes remain in scope until retirement is announced. Optional maintenance work may be considered before then. The repository is not retired.
+
 Homebrew (macOS and Linux):
 Literal
 ```bash
@@ -39,7 +41,8 @@ git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install .
+python -m pip install --upgrade pip "setuptools>=84.1.0"
+python -m pip install -c constraints-runtime.txt .
 ```
 For Windows PowerShell:
 Literal
@@ -48,7 +51,8 @@ git clone https://github.com/snapsynapse/substack2md.git
 cd substack2md
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-python -m pip install .
+python -m pip install --upgrade pip "setuptools>=84.1.0"
+python -m pip install -c constraints-runtime.txt .
 ```
 
 ## AI-Assisted Installation
@@ -77,9 +81,13 @@ The canonical served path is the `substack2md.space` `.well-known` URL above. Th
 For development work:
 Literal
 ```bash
-pip install -e ".[dev]"
+pip install -c constraints-runtime.txt -e ".[dev]"
 ```
 Installing registers a `substack2md` console script on your PATH. You can also invoke the package as a module: `python -m substack2md`.
+
+## Final-release candidate
+
+The v3.0.0 candidate raises the Python minimum to 3.11.5, requires HTTPS publication URLs and a loopback CDP host, limits concurrency to 8 and captured HTML to 8 MiB, and omits article URLs from CLI logs. Custom publication domains retain their existing post paths. Browser navigation can still follow redirects and use DNS; URL checks are not a network sandbox. See [the final-release disposition](docs/FINAL_RELEASE.md) for remaining acceptance and deliberate exclusions.
 
 ## Quick Start
 
@@ -318,7 +326,7 @@ is_paid: false
 audience: "everyone"
 links_internal: 3
 links_external: 12
-source: "substack2md v2.2.1"
+source: "substack2md v3.0.0"
 ---
 
 Content starts here...
@@ -336,7 +344,7 @@ When `--detect-paywall` is passed, substack2md queries Substack's public API to 
 
 If Substack returns an unrecognized audience value (a new tier), `audience` is preserved verbatim and `is_paid` is set to `null` so downstream workflows treat the post as "status unknown" rather than silently classifying it as free. On API failure (non-200, timeout, non-JSON) both fields are `null` and the pipeline continues.
 
-This is opt-in and the metadata endpoint is public. The current Requests client may still use ambient `.netrc` credentials or a configured proxy; see [SECURITY.md](SECURITY.md#paywall-api-calls). Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
+This is opt-in and the metadata endpoint is public. The final-release candidate disables ambient `.netrc` authentication, environment proxies and metadata redirects; see [SECURITY.md](SECURITY.md#paywall-api-calls). Without `--detect-paywall`, both fields are omitted. Version 2.2.0 preserves explicit nulls for unknown status; v2.1.2 omitted null fields. Paywall metadata does not establish that a captured article contains its full text.
 
 **Why this matters:** If you have a paid subscription, CDP may fetch the full content of subscriber-only posts. The paywall metadata helps you build guardrails in your own workflows, but it does not block output or grant permission to share it. Respect the creators whose work you value enough to pay for.
 
@@ -348,9 +356,12 @@ This is opt-in and the metadata endpoint is public. The current Requests client 
 - Close only the dedicated CDP-enabled browser instance and launch it again
 
 ### "Missing modules" error
+
+Activate the isolated environment created during installation, then reinstall from the repository root.
 Literal
 ```bash
-pip install .
+python -m pip install --upgrade pip "setuptools>=84.1.0"
+python -m pip install -c constraints-runtime.txt .
 ```
 ### URLs not being converted to wikilinks
 - The tool only converts links to posts you've already downloaded
@@ -376,13 +387,13 @@ options:
   --config FILE            Path to config.yaml
   --also-save-html         Save HTML sidecar files
   --overwrite              Replace existing files
-  --cdp-host HOST          CDP hostname (default: 127.0.0.1)
+  --cdp-host HOST          Loopback CDP host (default: 127.0.0.1)
   --cdp-port PORT          CDP port (default: 9222)
   --timeout SECONDS        Page load + paywall API timeout (default: 45)
   --retries N              Total attempts per URL, at least 1 (default: 2)
   --sleep-ms MS            Delay between requests per publication (default: 150)
   --detect-paywall         Add is_paid/audience to frontmatter via Substack API
-  --concurrency N          Parallel worker threads, 1=sequential (default: 1)
+  --concurrency N          Parallel worker threads, 1 through 8 (default: 1)
   --no-resume              Disable the .substack2md-state resume file
   --log-level LEVEL        DEBUG/INFO/WARNING/ERROR (default: INFO)
   --quiet, -q              Suppress per-URL progress lines

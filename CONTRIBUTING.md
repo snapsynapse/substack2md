@@ -6,12 +6,13 @@ Start with [INTENT.md](INTENT.md) for purpose and boundaries, and [repo-standard
 
 ## Local checks
 
-Create and activate an isolated environment, then install the development dependencies declared in `pyproject.toml`. Use its pinned Ruff version, which is also used in CI.
+Use Python 3.11.5 or newer. Create and activate an isolated environment, then install the development dependencies declared in `pyproject.toml`. Use its pinned Ruff version, which is also used in CI.
 Literal
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install --upgrade pip "setuptools>=84.1.0"
+python -m pip install -c constraints-runtime.txt -e ".[dev]"
 python -m pytest tests/ -v --tb=short
 python -m ruff check substack2md tests scripts
 python -m ruff format --check substack2md tests scripts

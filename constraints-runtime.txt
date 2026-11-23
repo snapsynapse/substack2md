@@ -1,0 +1,18 @@
+# Tested runtime versions for the final release candidate, 2026-11-22.
+# Apply with python -m pip install -c constraints-runtime.txt .
+beautifulsoup4==4.15.0
+certifi==2026.11.20
+chardet==5.2.0
+charset-normalizer==3.5.2
+cssselect==1.3.0
+idna==3.20
+lxml==6.1.3
+lxml_html_clean==0.4.6
+markdownify==1.2.4
+PyYAML==6.0.4
+readability-lxml==0.9
+requests==2.34.2
+soupsieve==4.1.3
+typing_extensions==4.16.0
+urllib3==2.8.0
+websocket-client==1.9.2

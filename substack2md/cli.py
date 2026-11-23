@@ -25,6 +25,7 @@ from pathlib import Path
 # effect inside process_url / process_from_md.  Importing the parent
 # package here (instead of binding the names locally) achieves that.
 from ._core import (
+    MAX_CONCURRENCY,
     TEASER_WORD_THRESHOLD,
     UnsafeOutputPathError,
     __version__,
@@ -42,6 +43,7 @@ from ._core import (
     sanitize_filename,
     scrub_transcript_lines,
     url_slug,
+    validate_post_url,
     with_frontmatter,
 )
 
@@ -132,6 +134,7 @@ def process_url(
     detailed: bool = False,
     url_map: dict[str, Path] | None = None,
 ) -> Path | None | ConversionResult:
+    validate_post_url(url)
     pkg = _substack2md()
     last_err = None
     for attempt in range(1, retries + 1):
@@ -166,8 +169,8 @@ def process_url(
                             "teaser suspected: %s is paywalled (audience=%s) but "
                             "body is only %d words. You may need a paid subscription "
                             "in the CDP-connected browser to fetch the full text.",
-                            url,
-                            pw["audience"],
+                            "[post URL redacted]",
+                            "paid",
                             word_count,
                         )
 
@@ -197,7 +200,7 @@ def process_url(
                 if also_save_html and not sidecar.is_file():
                     _write_artifacts({sidecar: html})
                     return _legacy_result(ConversionResult("written", out_path), detailed)
-                log.info("skip: exists %s", out_path)
+                log.info("skip: archive exists")
                 return _legacy_result(ConversionResult("skipped", out_path), detailed)
             index = build_url_to_note_map(base_dir) if url_map is None else url_map
             body_md, internal, external = rewrite_internal_links(body_md, index, base_dir=base_dir)
@@ -209,10 +212,10 @@ def process_url(
                 artifacts[out_path.with_suffix(".html")] = html
             artifacts[out_path] = md_full
             _write_artifacts(artifacts)
-            log.info("ok: %s -> %s", url, out_path)
+            log.info("ok: archive written")
             return _legacy_result(ConversionResult("written", out_path), detailed)
         except UnsafeOutputPathError as e:
-            log.error("fail: %s (%s)", url, e)
+            log.error("fail: unsafe archive path (%s)", type(e).__name__)
             return _legacy_result(ConversionResult("failed", error=str(e)), detailed)
         except Exception as e:
             last_err = e
@@ -224,8 +227,8 @@ def process_url(
                 try:
                     close()
                 except Exception as exc:
-                    log.warning("CDP connection cleanup failed: %s", exc)
-    log.error("fail: %s (%s)", url, last_err)
+                    log.warning("CDP connection cleanup failed (%s)", type(exc).__name__)
+    log.error("fail: capture failed (%s)", type(last_err).__name__)
     return _legacy_result(ConversionResult("failed", error=str(last_err)), detailed)
 
 
@@ -240,6 +243,7 @@ def process_from_md(
     *,
     detailed: bool = False,
 ) -> Path | None | ConversionResult:
+    validate_post_url(url)
     raw = md_path.read_text(encoding="utf-8")
     m = re.search(r"^#\s+(.+)$", raw, flags=re.M)
     title = m.group(1).strip() if m else md_path.stem
@@ -298,12 +302,12 @@ def process_from_md(
         if out_path.with_suffix(".html").name in requested:
             raise ValueError("Incomplete HTML capture; rerun the original URL capture to recover")
     if out_path.exists() and not overwrite and not pending.exists():
-        log.info("skip: exists %s", out_path)
+        log.info("skip: archive exists")
         return _legacy_result(ConversionResult("skipped", out_path), detailed)
 
     md_full = with_frontmatter(fields, body_md)
     _write_artifacts({out_path: md_full})
-    log.info("ok: %s -> %s", url, out_path)
+    log.info("ok: archive written")
     return _legacy_result(ConversionResult("written", out_path), detailed)
 
 
@@ -389,9 +393,16 @@ Environment variables:
         stream=sys.stderr,
     )
 
+    # HTTP debug records can contain private article paths.
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+
     for name in ("timeout", "retries", "concurrency"):
         if getattr(args, name) < 1:
             ap.error(f"--{name} must be at least 1")
+    if args.concurrency > MAX_CONCURRENCY:
+        ap.error(f"--concurrency must not exceed {MAX_CONCURRENCY}")
+    if args.cdp_host not in {"127.0.0.1", "localhost", "::1"}:
+        ap.error("--cdp-host must be a loopback address")
     if args.sleep_ms < 0:
         ap.error("--sleep-ms must be nonnegative")
     if not 1 <= args.cdp_port <= 65535:
@@ -434,7 +445,7 @@ Environment variables:
                 detailed=True,
             )
         except (OSError, ValueError) as exc:
-            log.error("failed: %s", exc)
+            log.error("failed: input or archive error (%s)", type(exc).__name__)
             return 1
         log.warning(
             "summary: %d written, %d skipped, 0 failed",
@@ -447,9 +458,10 @@ Environment variables:
         ap.print_help()
         return 2
     for url in url_list:
-        parts = urllib.parse.urlsplit(url)
-        if parts.scheme not in ("http", "https") or not parts.hostname or parts.username:
-            ap.error(f"expected an HTTP(S) post URL: {url}")
+        try:
+            validate_post_url(url)
+        except ValueError as exc:
+            ap.error(str(exc))
 
     # Deduplicate before scheduling; aliases with tracking parameters share work.
     url_list = list({cleanup_url(url): url for url in url_list}.values())
@@ -509,7 +521,7 @@ Environment variables:
                     with result_lock:
                         index[cleanup_url(url)] = result.path
             except Exception as exc:
-                log.error("fail: %s (%s)", url, exc)
+                log.error("fail: capture failed (%s)", type(exc).__name__)
                 result = ConversionResult("failed", error=str(exc))
             with result_lock:
                 counts[result.status] += 1

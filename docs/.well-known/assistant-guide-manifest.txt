@@ -1,11 +1,11 @@
 guide-path: /.well-known/assistant-guide.txt
-guide-version: 1.0.2
-guide-sha256: 83897a41301889d763d2280d8cddce1f88d4ffc219c98c8b0289a2ecc209b404
-guide-bytes: 6433
-immutable-release-url: https://github.com/snapsynapse/substack2md/releases/tag/v2.2.0
+guide-version: 1.0.3
+guide-sha256: 5db67193bdf5c9fc7bb8ea302b08dfb2d6c663c905b6f61edc3191fd32f65590
+guide-bytes: 6819
+immutable-release-url: https://github.com/snapsynapse/substack2md/releases/tag/v3.0.0
 profile: human-verifiable-assistant-guide
 profile-version: 0.3.0
 canonical-url: https://substack2md.space/.well-known/assistant-guide.txt
 repository-url: https://github.com/snapsynapse/substack2md
-prepared-on: 2026-09-05
+prepared-on: 2026-11-22
 changelog-url: https://github.com/snapsynapse/substack2md/blob/main/CHANGELOG.md

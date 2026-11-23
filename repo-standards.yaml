@@ -33,7 +33,7 @@ checks:
     cwd: .
     expected: Exit 0 for the offline suite; the opt-in live API test may skip and does not establish live compatibility.
     blocking: true
-    prerequisites: Activate an isolated environment with the development dependencies from pyproject.toml; CI exercises Python 3.10 through 3.13.
+    prerequisites: Activate an isolated environment with the development dependencies from pyproject.toml; CI exercises Python 3.11.5 and the latest 3.11 through 3.14 patch releases.
   lint:
     command: python -m ruff check substack2md tests scripts
     cwd: .

@@ -273,3 +273,9 @@ working/
 
 # Synthetic extraction fixtures are source-controlled, not captured output.
 !tests/fixtures/*.html
+
+# Final release: local credentials and agent evidence
+.env.*
+.vercel/
+.playwright-mcp/
+.search-evidence-private/

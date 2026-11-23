@@ -15,11 +15,17 @@ The tool makes a reading archive usable outside Substack by preserving post meta
 
 These summarize existing behavior and maintenance requirements, rather than introducing new product commitments.
 
-1. Capture uses a user-controlled browser session. The documented setup isolates its profile and keeps the sensitive CDP endpoint local. Fixtures exclude credentials and private captured content; routine logs can still include raw input URLs until the open logging finding in [the security audit](docs/security/audits/audit-2026-11-22.md) is fixed.
+1. Capture uses a user-controlled browser session. The documented setup isolates its profile and keeps the sensitive CDP endpoint local. Fixtures exclude credentials and private captured content; the final-release candidate omits article URLs and raw transport exception messages from CLI logs.
 2. Archive paths remain inside the configured output root. Requested artifacts must be written before a capture is recorded as complete, and failed batch items produce a nonzero exit status.
 3. Unknown paywall metadata remains unknown. Capture and metadata checks do not prove article completeness or redistribution rights.
 4. Offline regression checks work without a browser or credentials. API compatibility and authenticated browser capture require their own evidence.
 5. Installation guidance identifies exact guide bytes and explicit actions. Local mirror/hash checks do not establish hosted conformance, publisher identity, dependency safety, or release publication.
+
+## Final-release preparation
+
+Owner decision, November 22, 2026: prepare v3.0.0 as the last planned release and raise the Python minimum to 3.11.5. Critical security and breakage fixes remain in scope until retirement is announced. A small set of optional maintenance items may be delivered before then; none is a release commitment. Retirement is expected soon but has not been declared, and the repository remains unarchived.
+
+The bounded closeout, optional queue and release evidence live in [docs/FINAL_RELEASE.md](docs/FINAL_RELEASE.md). Publication requires its remaining delivery gates.
 
 ## Scope boundaries
 
@@ -40,5 +46,6 @@ The installation guide declares GuideCheck profile 0.3.0. Hosted-site changes us
 
 ## Changelog
 
+- 2026-11-22: Selected v3.0.0, Python 3.11.5 minimum and last-planned-release support policy; retained critical security/breakage fixes and a bounded optional queue before separately announced retirement.
 - 2026-11-22: Clarified the open URL-logging limit after checking the current CLI against the security audit.
 - 2026-09-08: Consolidated existing maintenance scope and distribution boundaries; added a repository-local standards declaration pilot without changing runtime behavior or publication status.

@@ -42,4 +42,4 @@ Delivery was authorized on September 5, 2026. The GitHub release and its tagged 
 
 The account setup prerequisite is complete and traced to the durable convention plus GitHub-verified profile commit `ce5994a`. Do not repeat account setup or change keys. The local candidate bundle may provide an allowed-signers file derived from the account's public GitHub signing keys; its verification evidence is in the release-state record. No global signing configuration is changed.
 
-PR #3 remains closed without merging. The repository's signing handoff remains open for its next signed commit, GitHub verification, and annotated signed release tag. Local checks do not establish hosted CI, publication, deployment, or authenticated capture for the final release.
+Historical signing status is superseded by the v2.2.1 delivery evidence in [MAINTENANCE.md](MAINTENANCE.md#signing-baseline-and-completion-criteria). PR #3 remains closed without merging. The active candidate queue is [FINAL_RELEASE.md](FINAL_RELEASE.md). Authenticated browser acceptance remains unobserved.

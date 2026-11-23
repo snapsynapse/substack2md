@@ -15,13 +15,15 @@ substack2md is a Python command-line tool that converts Substack posts to clean 
 - Paywall detection via Substack's public API, opt-in
 - Ships with a GuideCheck human-verifiable assistant guide for AI-assisted local install
 
-This summary describes version 2.2.1. Contribution scope is maintenance-only: correctness, security, compatibility, and documentation. The tool converts supplied post URLs or existing Markdown; it does not crawl publication archives, support other publishing platforms, or export additional formats. Check GitHub Releases for published artifacts; documentation and local package versions do not establish publication.
+This summary describes candidate version 3.0.0, not yet published; latest published release is v2.2.1. Requires Python 3.11.5 or newer. This is the last planned release; critical security and breakage fixes remain in scope until retirement is announced. Optional maintenance may be considered before then. Contribution scope is maintenance-only: correctness, security, compatibility, and documentation. The tool converts supplied post URLs or existing Markdown; it does not crawl publication archives, support other publishing platforms, or export additional formats. Check GitHub Releases for published artifacts; documentation and local package versions do not establish publication.
 
 Version 2.2.0 uses output-aware resume records, overwrite bypasses resume, interrupted artifact pairs are recovered on rerun, and CLI failures return nonzero with written/skipped/failed counts. New JSON-line state records coexist with legacy URL-only records.
 
 When paywall detection is requested, unknown is_paid and audience are explicit YAML nulls. Without detection, those fields are omitted. Metadata and capture heuristics cannot prove article completeness. Images and embeds remain external links; only the saved text is available offline.
 
 Version 2.2.1 filters schemes and escapes Markdown destinations for links generated from HTML. Unsafe wikilink aliases remain ordinary Markdown links. The macOS launcher refuses occupied CDP ports. Imported Markdown and raw HTML sidecars remain untrusted content.
+
+Unreleased final-release preparation adds HTTPS URL checks, a loopback CLI CDP host requirement, an 8 MiB capture limit, a maximum of 8 workers, redacted CLI logs and anonymous metadata requests. These controls are not part of published v2.2.1.
 
 ## Documentation and agent entry points
 

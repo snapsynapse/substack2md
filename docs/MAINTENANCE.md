@@ -6,6 +6,10 @@ This repository has a maintenance-only contribution scope. Publication status an
 
 Maintenance readiness requires reliable capture and recovery, meaningful failure exit codes, clean installation from a built wheel, and agreement between documentation and behavior. Local validation establishes readiness for review; publication and live verification remain separate steps.
 
+## Last planned release and support
+
+The owner selected v3.0.0 as the last planned release, requiring Python 3.11.5 or newer. Until retirement is announced, maintenance prioritizes critical security and breakage fixes. Optional maintenance items listed in [FINAL_RELEASE.md](FINAL_RELEASE.md) may be considered before retirement; they are not promised releases. Retirement, repository archival and distribution-channel shutdown remain separate decisions.
+
 ## Distribution decision
 
 Decision: 2026-09-05, approved by the maintainer. Do not publish this project to PyPI. Supported distribution channels are GitHub Releases (wheel and source archives) and the `snapsynapse/tap/substack2md` Homebrew formula. The PyPI name `substack2md` belongs to a different project; a renamed PyPI distribution and its publishing infrastructure are outside maintenance scope. Python dependencies may still be obtained from PyPI. Revisit only through an explicit maintainer decision.
@@ -31,7 +35,7 @@ The handoff's account-level prerequisite pointer is stale: the old profile hando
 
 Local signature verification currently requires an explicitly trusted allowed-signers file: `gpg.ssh.allowedSignersFile` is not configured in this checkout. Resolve that verification input from the approved convention at delivery time, without changing global configuration or exposing key material. This does not negate GitHub's verified test-commit evidence.
 
-The release procedure above records this repository's durable signing workflow. Completing the handoff requires the next natural signed commit to be Verified on GitHub and the next release to use an annotated signed tag. Do not delete the handoff based on documentation work alone.
+The signing handoff criteria were met by v2.2.1 on November 22, 2026: commit `f876cf8` and annotated signed tag `v2.2.1` were verified locally and by GitHub. [Release evidence](https://github.com/snapsynapse/substack2md/releases/tag/v2.2.1) includes exact-commit CI and checksums; the downloaded wheel passed the clean consumer smoke check. The older unsigned baseline and public tags remain unchanged. [FINAL_RELEASE.md](FINAL_RELEASE.md) owns the current candidate queue.
 
 ## Historical contribution review
 

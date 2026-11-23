@@ -78,6 +78,6 @@ if curl -s http://127.0.0.1:$PORT/json > /dev/null; then
     echo "Test CDP: curl http://127.0.0.1:$PORT/json"
 else
     echo "✗ Browser started but CDP not accessible"
-    echo "Please try closing all browser windows and running this script again"
+    echo "Please close only the dedicated CDP browser instance and try again"
     exit 1
 fi

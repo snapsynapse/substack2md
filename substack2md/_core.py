@@ -9,6 +9,7 @@ consumers can keep using the flat ``import substack2md`` API.
 """
 
 import datetime as dt
+import ipaddress
 import json
 import logging
 import os
@@ -171,6 +172,53 @@ def normalize_tags(tags: list[str]) -> list[str]:
     if "substack" not in out:
         out.insert(0, "substack")
     return out
+
+
+MAX_HTML_BYTES = 8 * 1024 * 1024
+MAX_CONCURRENCY = 8
+
+
+def validate_post_url(url: str) -> None:
+    """Accept HTTPS post paths, including custom publication domains."""
+    try:
+        parts = urllib.parse.urlsplit(url)
+        host = (parts.hostname or "").encode("idna").decode("ascii")
+        valid = (
+            parts.scheme == "https"
+            and len(host) <= 253
+            and re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}", host)
+            is not None
+            and parts.username is None
+            and parts.password is None
+            and parts.port in (None, 443)
+            and bool(parts.path.strip("/"))
+            and (
+                not host.endswith(".substack.com")
+                or re.fullmatch(r"/p/[^/]+/?", parts.path) is not None
+            )
+            and len(url) <= 8192
+            and not any(ch.isspace() or ord(ch) < 32 or ch == "\\" for ch in url)
+            and "." in host
+            and not host.endswith((".local", ".localhost", ".internal"))
+        )
+        try:
+            ipaddress.ip_address(host)
+            valid = False
+        except ValueError:
+            pass
+        if not valid:
+            raise ValueError
+    except ValueError:
+        raise ValueError(
+            "Expected an HTTPS publication post URL (Substack paths must use /p/slug)"
+        ) from None
+
+
+def _anonymous_get(url: str, **kwargs):
+    # Disable netrc, environment proxies and ambient CA overrides for public metadata.
+    with requests.Session() as session:
+        session.trust_env = False
+        return session.get(url, allow_redirects=False, **kwargs)
 
 
 def cleanup_url(url: str) -> str:
@@ -420,8 +468,10 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
 
     result: dict = {"is_paid": None, "audience": None}
     api_url = f"https://{publication}.substack.com/api/v1/posts/{slug}"
+    if not re.fullmatch(r"[a-zA-Z0-9-]+", publication) or not re.fullmatch(r"[\w%-]+", slug):
+        return result
     try:
-        resp = requests.get(
+        resp = _anonymous_get(
             api_url,
             headers={"Accept": "application/json", "User-Agent": f"substack2md/{__version__}"},
             timeout=timeout,
@@ -430,7 +480,7 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
             data = resp.json()
             audience = data.get("audience")
             if audience is None:
-                log.warning("paywall: 200 OK but no 'audience' field for %s", api_url)
+                log.warning("paywall: response has no audience field")
             elif audience in known_paid:
                 result["audience"] = audience
                 result["is_paid"] = True
@@ -439,13 +489,11 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
                 result["is_paid"] = False
             else:
                 result["audience"] = audience
-                log.warning(
-                    "paywall: unknown audience %r for %s; is_paid left as None", audience, api_url
-                )
+                log.warning("paywall: unknown audience value; is_paid left as None")
         else:
-            log.warning("paywall: API returned %s for %s", resp.status_code, api_url)
+            log.warning("paywall: API returned %s", resp.status_code)
     except Exception as exc:
-        log.warning("paywall: could not query %s: %s", api_url, exc)
+        log.warning("paywall: metadata request failed (%s)", type(exc).__name__)
     return result
 
 
@@ -455,6 +503,8 @@ def fetch_paywall_status(publication: str, slug: str, timeout: float = 10.0) -> 
 
 
 def extract_article_fields(url: str, html: str) -> tuple[dict, str]:
+    if len(html.encode("utf-8")) > MAX_HTML_BYTES:
+        raise ValueError("Captured HTML exceeds 8 MiB limit")
     soup = BeautifulSoup(html, "lxml")
     ld = parse_ld_json(soup)
 
@@ -485,7 +535,7 @@ def extract_article_fields(url: str, html: str) -> tuple[dict, str]:
 
     date_pub = (ld.get("datePublished") if ld else None) or ""
     date_mod = (ld.get("dateModified") if ld else None) or ""
-    retrieved = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    retrieved = dt.datetime.now(dt.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
     img_url = (ld.get("image") if ld else None) or ""
     if isinstance(img_url, dict):
         img_url = img_url.get("url") or ""
@@ -598,7 +648,8 @@ class CDPClient:
         self._events = deque()
 
     def connect(self):
-        resp = requests.get(f"http://{self.host}:{self.port}/json/version", timeout=self.timeout)
+        authority = f"[{self.host}]" if ":" in self.host else self.host
+        resp = requests.get(f"http://{authority}:{self.port}/json/version", timeout=self.timeout)
         ws_url = resp.json()["webSocketDebuggerUrl"]
         self.ws = create_connection(ws_url, timeout=self.timeout)
 
@@ -692,7 +743,12 @@ class CDPClient:
             self.recv_event_until("Page.loadEventFired", sessionId=sessionId, timeout=self.timeout)
             res = self.send(
                 "Runtime.evaluate",
-                {"expression": "document.documentElement.outerHTML", "returnByValue": True},
+                {
+                    "expression": "(() => { const html = document.documentElement.outerHTML; "
+                    f"return new TextEncoder().encode(html).length <= {MAX_HTML_BYTES} ? html : null; "
+                    "})()",
+                    "returnByValue": True,
+                },
                 sessionId=sessionId,
             )
             if res.get("exceptionDetails"):

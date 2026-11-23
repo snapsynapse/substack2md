@@ -1,19 +1,4 @@
-"""
-Evals for the --detect-paywall CLI flag and its wiring through process_url.
-
-Merge-blocking questions:
-
-  C1. CLI parse: --detect-paywall is recognized; default is False.
-  C2. Opt-in: without the flag, fetch_paywall_status is NEVER called.
-      (Avoids unexpected network traffic for existing users.)
-  C3. When flag is on, process_url calls fetch_paywall_status exactly once
-      per URL, with the correct (publication, slug).
-  C4. When the API call returns None/None (failure mode), the pipeline
-      still succeeds -- the .md file is written.
-  C5. --from-md path is unaffected (paywall detection is opt-in on the
-      live-fetch path only).  This is a conscious scope choice; test
-      pins it so future refactors don't silently break it.
-"""
+"""Offline CLI and pipeline wiring checks, including opt-in paywall metadata."""
 
 import sys
 from pathlib import Path
